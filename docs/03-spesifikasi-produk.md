@@ -53,6 +53,9 @@ kurir hanya boleh punya satu rit aktif.
   berangkat.
 - **Bos mengecek muatan** lalu menekan "Muatan cocok", atau membetulkan angkanya.
   Perubahannya tercatat di `audit_log`.
+- Selain galon isi, kurir mengisi **muatan produk lain** yang dibawa (misalnya 5 tabung LPG 3 kg
+  dan 2 galon air bermerek). Hanya produk yang ada di muatan yang bisa dijual di rit itu. Bos
+  ikut mengecek dan bisa membetulkan jumlah per produk, dengan alasan yang masuk `audit_log`.
 - Rit tetap bisa berjalan sebelum dicek, tetapi tampil di dasbor dengan label **"Muatan
   belum dicek"**.
 - Alasannya: kalau hanya kurir yang menulis jumlah muatan, ia bisa menulis 40 padahal
@@ -78,7 +81,13 @@ Layar kurir berisi dua tombol besar:
 | `tanpa_qr` | Kurir memilih "Toko tanpa QR" dari daftar (misalnya stiker rusak) | Harga rumah |
 
 Penjualan yang tidak `terverifikasi` bisa **disetujui bos** (dengan alasan), dan sesudah itu
-berlaku harga toko.
+berlaku harga toko. Persetujuan berlaku untuk semua produk dalam kunjungan yang sama.
+
+**Beberapa produk dalam satu kunjungan:** kurir bisa menambah baris produk lain dari muatannya
+(misalnya 3 galon isi ulang dan 1 tabung LPG). Semua baris memakai status verifikasi yang sama.
+Harga tiap baris mengikuti produknya (bagian 6.1): harga toko hanya berlaku bila produk punya
+harga toko yang lebih murah **dan** penjualannya terbukti; produk tanpa harga toko selalu harga
+rumah. Kosong diambil hanya diisi untuk produk dengan tukar kosong.
 
 **B. JUAL KE RUMAH**
 1. Kurir memilih pelanggan rumah (diurutkan dari yang terdekat), atau "Pembeli baru" dengan
@@ -97,18 +106,26 @@ berlaku harga toko.
   tombol coba lagi. Data yang gagal tersimpan tidak boleh tampak seolah berhasil.
 - **Antrean offline:** penjualan disimpan di HP beserta lokasi dan waktu HP, lalu
   dikirim saat sinyal kembali dan diberi tanda `dicatat_offline`.
+- **Rit kemarin wajib ditutup:** di depot sungguhan, rit dari hari sebelumnya yang belum ditutup
+  harus diselesaikan dulu sebelum kurir mencatat penjualan baru. Pengecualian: penjualan antrean
+  offline yang waktu HP-nya masih di tanggal rit itu. Tanpa aturan ini kurir bisa membiarkan rit
+  terbuka berhari-hari sehingga setoran tidak pernah dicocokkan. Tidak berlaku di depot demo.
 
 ### 3.3 Selesai rit dan setor
 
-Kurir mengisi **galon isi dibawa pulang**, **galon kosong dibawa pulang**, dan **uang tunai
-disetor**. Server lalu menghitung:
+Kurir mengisi **galon isi dibawa pulang**, **galon kosong dibawa pulang**, **isi dan kosong
+dibawa pulang untuk setiap produk lain di muatan**, dan **uang tunai disetor**. Server lalu
+menghitung:
 
 | Hitungan | Rumus |
 |---|---|
-| Galon terjual menurut stok | dibawa − isi dibawa pulang |
-| Galon terjual menurut catatan | jumlah galon isi dari semua penjualan rit ini |
+| Galon terjual menurut stok | dibawa − isi dibawa pulang (isi ulang galon) |
+| Galon terjual menurut catatan | jumlah galon isi dari semua penjualan isi ulang galon rit ini |
 | **Selisih galon** | stok − catatan (seharusnya 0) |
-| Uang seharusnya | Σ (galon × harga yang berlaku) dari penjualan **tunai** |
+| Galon kosong menurut catatan | jumlah galon kosong diambil dari penjualan isi ulang galon |
+| **Selisih galon kosong** | kosong dibawa pulang − catatan (kurang dari 0 memicu R9) |
+| Per produk lain | terjual menurut stok vs catatan, dan kosong dibawa pulang vs catatan |
+| Uang seharusnya | Σ (jumlah × harga yang berlaku) dari penjualan **tunai** semua produk |
 | **Selisih uang** | disetor − uang seharusnya |
 
 Bos menekan **"Setoran diterima"** setelah menghitung ulang uang dan galon.
@@ -133,7 +150,7 @@ saat dihitung ulang.**
 | Angka | Arti untuk bos | Sumber |
 |---|---|---|
 | **Tagihan kembali** | Uang yang diamankan aturan "toko tanpa bukti dihitung harga rumah". Tanpa AQUAIR, uang ini hilang tanpa terlihat. | R2 (termasuk penjualan yang juga bertanda R4) |
-| **Perkiraan bocor** | Uang yang mungkin masih hilang walau aturan harga sudah berjalan | R1, R3, R6, R7, R8 |
+| **Perkiraan bocor** | Uang yang mungkin masih hilang walau aturan harga sudah berjalan | R1, R3, R6, R7, R8, R9 |
 
 - **Satu galon hanya dihitung sekali.** Penjualan yang bertanda R2 dan R4 sekaligus hanya
   dihitung satu kali.
@@ -141,27 +158,29 @@ saat dihitung ulang.**
   dihargai harga toko, jadi Rupiah R2/R4-nya masuk **Perkiraan bocor**.
 - Penjualan yang disetujui bos untuk harga toko bernilai Rp0: tanda R2 dan R4 penjualan itu
   hilang dari Radar.
-- **Selisih harga** = harga rumah − harga toko (default Rp1.000).
+- **Selisih harga** = harga rumah − harga toko (default Rp1.000 untuk isi ulang galon). Untuk
+  produk lain, selisihnya dari harga produk itu, dan R2 dihitung per produk.
 
 ### 4.2 Aturan
 
 | Kode | Aturan (angka default bisa diubah bos) | Perkiraan Rupiah | Masuk ke |
 |---|---|---|---|
-| **R1** rasio toko tinggi | **Porsi toko** = galon yang dicatat sebagai toko (semua status) ÷ semua galon terjual kurir itu hari itu. Hanya dihitung bila kurir menjual ≥ 10 galon. Tanda muncul bila porsi − garis dasar ≥ 25 poin persen. **Garis dasar** = median porsi toko dari hari-kurir milik **semua kurir di depot** dalam 14 hari sebelumnya yang ≥ 80% galon tokonya terverifikasi. Kalau belum ada, pakai setelan bos (default 50%). | max(0, galon toko terverifikasi − garis dasar × semua galon) × selisih harga. Sering Rp0; tandanya tetap berguna sebagai sinyal. | Perkiraan bocor |
-| **R2** toko tanpa bukti | Penjualan toko yang tidak `terverifikasi` dan belum disetujui bos | galon × selisih harga | Tagihan kembali |
-| **R3** stok toko tidak wajar | Per toko per hari: `stok_hitung = max(0, stok_kemarin − laku_per_hari) + galon_diantar_hari_ini`. **Galon diantar hanya dari penjualan yang dihargai harga toko** (terverifikasi atau disetujui bos), supaya klaim tanpa bukti dari satu kurir tidak membuat kurir lain ikut ditandai. Tanda muncul bila `stok_hitung` > kapasitas. Stok yang dibawa ke esok hari = `min(stok_hitung, kapasitas)`, supaya kelebihan yang sama tidak ditandai lagi. Stok awal 0 saat toko didaftarkan. Kapasitas dan laku per hari diisi bos. | (stok_hitung − kapasitas) × selisih harga | Perkiraan bocor |
-| **R4** QR dipindai jauh | Status `lokasi_jauh`. Kemungkinan QR difoto. | Sudah dihitung di R2, tidak ditambah lagi | Tagihan kembali |
-| **R5** lompatan lokasi | Dua pencatatan berurutan dalam satu rit berjarak > 300 m dengan kecepatan tempuh > 60 km/jam | — | — |
+| **R1** rasio toko tinggi | Hanya isi ulang galon. **Porsi toko** = galon yang dicatat sebagai toko (semua status) ÷ semua galon terjual kurir itu hari itu. Hanya dihitung bila kurir menjual ≥ 10 galon. Tanda muncul bila porsi − garis dasar ≥ 25 poin persen. **Garis dasar** = median porsi toko dari hari-kurir milik **semua kurir di depot** dalam 14 hari sebelumnya yang ≥ 80% galon tokonya terverifikasi. Kalau belum ada, pakai setelan bos (default 50%). | max(0, galon toko terverifikasi − garis dasar × semua galon) × selisih harga. Sering Rp0; tandanya tetap berguna sebagai sinyal. | Perkiraan bocor |
+| **R2** toko tanpa bukti | Penjualan toko yang tidak `terverifikasi` dan belum disetujui bos, untuk setiap produk yang punya harga toko lebih murah. Satu tanda per produk per kurir per hari. | jumlah × selisih harga produk itu | Tagihan kembali |
+| **R3** stok toko tidak wajar | Hanya isi ulang galon. Per toko per hari: `stok_hitung = max(0, stok_kemarin − laku_per_hari) + galon_diantar_hari_ini`. **Galon diantar hanya dari penjualan yang dihargai harga toko** (terverifikasi atau disetujui bos), supaya klaim tanpa bukti dari satu kurir tidak membuat kurir lain ikut ditandai. Tanda muncul bila `stok_hitung` > kapasitas. Stok yang dibawa ke esok hari = `min(stok_hitung, kapasitas)`, supaya kelebihan yang sama tidak ditandai lagi. Stok awal 0 saat toko didaftarkan. Kapasitas dan laku per hari diisi bos. | (stok_hitung − kapasitas) × selisih harga | Perkiraan bocor |
+| **R4** QR dipindai jauh | Status `lokasi_jauh`, sekali per kunjungan. Kemungkinan QR difoto. | Sudah dihitung di R2, tidak ditambah lagi | Tagihan kembali |
+| **R5** lompatan lokasi | Dua kunjungan berurutan dalam satu rit berjarak > 300 m dengan kecepatan tempuh > 60 km/jam | — | — |
 | **R6** kurang setor | Uang disetor < uang seharusnya | Besar kekurangan | Perkiraan bocor |
-| **R7** selisih galon | Galon terjual menurut stok ≠ menurut catatan | Bila stok > catatan: selisih galon × harga rumah. Bila catatan > stok: Rp0 (tanda tetap muncul). | Perkiraan bocor |
-| **R8** konfirmasi berbeda | Pemilik toko menjawab jumlah yang berbeda dari catatan | Bila toko menjawab lebih sedikit: beda galon yang dihargai harga toko × selisih harga, dikurangi Rupiah R3 toko itu pada minggu yang sama (minimal Rp0). Bila lebih banyak: Rp0. | Perkiraan bocor |
+| **R7** selisih stok | Terjual menurut stok ≠ menurut catatan, untuk isi ulang galon dan setiap produk di muatan | Bila stok > catatan: selisih × harga rumah produk itu. Bila catatan > stok: Rp0 (tanda tetap muncul). | Perkiraan bocor |
+| **R8** konfirmasi berbeda | Hanya isi ulang galon. Pemilik toko menjawab jumlah yang berbeda dari catatan | Bila toko menjawab lebih sedikit: beda galon yang dihargai harga toko × selisih harga, dikurangi Rupiah R3 toko itu pada minggu yang sama (minimal Rp0). Bila lebih banyak: Rp0. | Perkiraan bocor |
+| **R9** galon kosong kurang | Kosong dibawa pulang lebih sedikit dari kosong yang dicatat diambil, untuk isi ulang galon dan produk dengan tukar kosong | Isi ulang galon: kekurangan × nilai galon kosong (pengaturan, default Rp0). Produk lain: Rp0. | Perkiraan bocor |
 
 ### 4.3 Tingkat risiko per kurir per hari
 
 Tanda berstatus `sudah_dicek_aman` tidak ikut dihitung.
 
 - **Tinggi:** ada R1, R3, R4, R6, atau R8, atau perkiraan bocor hari itu ≥ Rp15.000.
-- **Sedang:** ada R2, R5, atau R7.
+- **Sedang:** ada R2, R5, R7, atau R9.
 - **Rendah:** tidak ada tanda.
 
 ### 4.4 Contoh hitungan — jadikan tes otomatis
@@ -200,7 +219,10 @@ angkanya tidak kosong di awal bulan.
   - uang seharusnya vs disetor,
   - tagihan kembali dan perkiraan bocor hari ini,
   - jumlah tanda baru,
-  - rit dengan muatan belum dicek.
+  - rit dengan muatan belum dicek,
+  - produk lain yang terjual lewat kurir dan uang penjualan di depot.
+- **Peringatan rit belum ditutup:** rit dari hari sebelumnya yang masih aktif, dengan tautan
+  ke detail ritnya.
 - **Kartu per kurir:**
   - porsi toko dan persentase galon toko terverifikasi (hari ini dan 30 hari),
   - tagihan kembali dan perkiraan bocor 30 hari,
@@ -209,8 +231,9 @@ angkanya tidak kosong di awal bulan.
 - **Radar Kecurangan:** tanda dikelompokkan per kurir per hari, dengan filter Hari ini /
   7 hari / 30 hari (default 30 hari), terbaru di atas.
 - **Tren 30 hari:** grafik garis porsi toko per kurir, beserta garis dasar.
-- **Detail rit:** daftar penjualan berurutan (jam, pelanggan, jenis, galon, status
-  verifikasi, jarak ke titik), perhitungan setoran, dan tanda-tanda Radar.
+- **Detail rit:** daftar penjualan berurutan (jam, pelanggan, jenis, produk dan jumlah, status
+  verifikasi, jarak ke titik), perhitungan setoran termasuk galon kosong dan per produk, dan
+  tanda-tanda Radar.
 
 Contoh satu kelompok di Radar:
 
@@ -225,6 +248,28 @@ Contoh satu kelompok di Radar:
 
 ## 6. Kelola data (bos)
 
+### 6.1 Produk & harga
+- **Isi ulang galon** adalah produk utama. Harganya diatur di Pengaturan, dan hanya produk ini
+  yang dipakai R1, R3, R8, statistik porsi toko, dan saldo galon pinjaman.
+- Bos bisa menambah produk lain: nama, jenis (isi ulang lain, isi wadah kecil, galon baru,
+  air kemasan bermerek, LPG, lainnya), satuan, **harga rumah**, **harga toko (opsional)**,
+  sakelar **dijual lewat kurir**, **dijual di depot**, **ada tukar kosong**, dan aktif.
+- Harga toko harus lebih murah dari harga rumah, atau dikosongkan bila produk hanya punya satu
+  harga. Aturan "harga toko wajib punya bukti" berlaku untuk semua produk.
+- Produk tidak dihapus, hanya dinonaktifkan, supaya catatan lama tetap utuh. Perubahan harga
+  berlaku untuk penjualan berikutnya dan tercatat di `audit_log`.
+- Air kemasan bermerek dijual tersegel sebagai barang dagangan. Depot tetap dilarang mengisi
+  ulang ke galon atau tutup bermerek (lihat Kepatuhan).
+
+### 6.2 Penjualan di depot
+- Untuk pembeli yang datang langsung ke depot, misalnya tetangga yang mengisi wadah kecil
+  Rp2.000. Bos memilih produk yang dijual di depot, mengisi jumlah, lalu menyimpan; harga
+  mengikuti harga rumah produk itu dan dibayar tunai.
+- Catatan tidak bisa dihapus. Bos bisa membatalkan dengan alasan; catatan batal tetap tampil
+  dan tercatat di `audit_log`.
+- Total hari ini tampil di dasbor dan bisa diunduh sebagai CSV.
+
+### 6.3 Data lain
 - **Pelanggan:**
   - nama, jenis (toko/rumah), nomor WA (opsional), titik lokasi,
   - titik lokasi diambil dengan tombol "Pakai lokasi saya sekarang" saat berdiri di
@@ -248,14 +293,16 @@ Contoh satu kelompok di Radar:
   - radius verifikasi (default 75 m),
   - garis dasar porsi toko (default 50%),
   - sakelar "Toko tanpa bukti dihitung harga rumah" (default menyala),
+  - nilai galon kosong untuk Rupiah R9 (default Rp0),
   - perubahan harga, radius, dan sakelar berlaku untuk **penjualan berikutnya**. Penjualan
     yang sudah tersimpan tetap memakai `harga_berlaku`-nya. Setiap perubahan dicatat di
     `audit_log`.
 - **Unduh data (CSV):**
   - Hanya bos. Pilih jenis data dan rentang tanggal (default 30 hari terakhir), lalu unduh
     satu berkas CSV.
-  - Jenis data: **penjualan** (satu baris per penjualan), **rit & setoran** (satu baris per
-    rit), **tanda Radar** (satu baris per tanda), dan **log audit**.
+  - Jenis data: **penjualan** (satu baris per produk per kunjungan, dengan kolom produk dan
+    satuan), **rit & setoran** (satu baris per rit, termasuk galon kosong dan ringkasan produk
+    lain), **tanda Radar** (satu baris per tanda), **log audit**, dan **penjualan di depot**.
   - Format supaya langsung rapi di Excel dan Google Sheets berbahasa Indonesia: UTF-8 dengan
     BOM, pemisah titik koma (`;`), waktu `YYYY-MM-DD HH:MM` WIB, dan uang sebagai bilangan
     bulat tanpa "Rp" dan tanpa titik ribuan.
@@ -317,14 +364,16 @@ Contoh satu kelompok di Radar:
 
 | Koleksi | Isi utama |
 |---|---|
-| `depots` | nama, harga_toko, harga_rumah, radius_m, garis_dasar_toko, kebijakan_tanpa_bukti, is_demo |
+| `depots` | nama, harga_toko, harga_rumah, radius_m, garis_dasar_toko, kebijakan_tanpa_bukti, nilai_galon_kosong, is_demo |
+| `products` | depot_id, nama, kategori, satuan, harga_rumah, harga_toko, dijual_kurir, dijual_depot, pakai_kosong, aktif |
 | `users` | depot_id, peran (`bos`/`kurir`), nama, email atau no_hp, hash kata sandi atau PIN, aktif, gagal_masuk, dikunci_sampai |
 | `customers` | depot_id, jenis, nama, no_wa, lat, lng, kapasitas, laku_per_hari, boleh_bon, qr_token, status (`aktif`/`menunggu_persetujuan`), saldo_galon |
-| `trips` | depot_id, kurir_id, dibawa, muatan_dicek, muatan_dicek_oleh, isi_pulang, kosong_pulang, uang_disetor, uang_seharusnya, selisih_uang, selisih_galon, status (`aktif`/`selesai`/`diterima`), berangkat_at, selesai_at |
-| `sales` | depot_id, trip_id, kurir_id, customer_id, jenis, galon_isi, galon_kosong, bayar, lunas, harga_berlaku, status_verifikasi, lat, lng, akurasi_m, jarak_m, qr_dipindai, disimulasikan, dicatat_offline, disetujui_bos, created_at |
+| `trips` | depot_id, kurir_id, dibawa, muatan_lain (per produk: produk_id, nama, satuan, harga_rumah, pakai_kosong, dibawa, isi_pulang, kosong_pulang), muatan_dicek, muatan_dicek_oleh, isi_pulang, kosong_pulang, uang_disetor, uang_seharusnya, selisih_uang, selisih_galon, status (`aktif`/`selesai`/`diterima`), berangkat_at, selesai_at |
+| `sales` | depot_id, trip_id, kurir_id, customer_id, jenis, produk_id (`utama` atau id produk), nama_produk, satuan, galon_isi dan galon_kosong (jumlah isi dan kosong untuk produk apa pun), kunjungan_id, baris_ke, bayar, lunas, harga_berlaku, status_verifikasi, lat, lng, akurasi_m, jarak_m, qr_dipindai, disimulasikan, dicatat_offline, disetujui_bos, created_at |
 | `flags` | depot_id, kurir_id, trip_id, sale_id, customer_id, kode, penjelasan, perkiraan_rupiah, masuk_ke (`tagihan_kembali`/`perkiraan_bocor`/kosong), tanggal, status |
 | `confirmations` | depot_id, customer_id, periode, galon_tercatat, jawaban, galon_menurut_toko, token_hash, dijawab_at |
 | `maintenance` / `compliance` | komponen atau dokumen, tanggal_terakhir, interval_hari, berlaku_sampai |
+| `depot_sales` | depot_id, produk_id, nama_produk, satuan, jumlah, harga, total, batal, alasan_batal, dicatat_oleh, tanggal, created_at |
 | `audit_log` | depot_id, user_id, aksi, sebelum, sesudah, alasan, created_at |
 
 **Depot demo:** setiap dokumen milik depot demo punya field `kedaluwarsa_at`, dan setiap
@@ -364,6 +413,11 @@ itu:
   dengan titik lokasi dalam radius 1,5 km dari satu titik pusat kelurahan fiktif. Tiga
   rumah boleh bon. Nomor WA contoh dikosongkan.
 - **Rute:** Dimas dan Rudi masing-masing melayani 10 toko yang berbeda.
+- **Produk contoh** (harganya data contoh): LPG 3 kg (rumah Rp22.000, toko Rp21.000, tukar
+  kosong), air galon bermerek (Rp21.000, tukar kosong), dan isi wadah kecil (Rp2.000, dijual di
+  depot). Hari ini Dimas menjual 2 tabung LPG dan 1 galon bermerek ke rumah; rit aktif Rudi
+  membawa 3 tabung LPG dan 2 galon bermerek; ada 4 penjualan isi wadah kecil di depot. Riwayat
+  30 hari Radar tidak berubah karena produk contoh.
 - **Riwayat 30 hari yang berakhir hari ini**, dihitung saat depot demo dibuat. Jadi
   dasbor tidak pernah kosong atau basi.
 - **Tanda Radar dihasilkan oleh mesin Radar yang sama** dari penjualan contoh, bukan
@@ -412,5 +466,5 @@ itu:
 
 ## 12. Di luar cakupan
 
-Aplikasi kasir umum, pembayaran online, pemasaran, pelacakan lokasi kurir sepanjang hari,
+Kasir lengkap (stok gudang, diskon, struk cetak), pembayaran online, pemasaran, pelacakan lokasi kurir sepanjang hari,
 dan perangkat tambahan (RFID, timbangan).

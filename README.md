@@ -38,7 +38,7 @@ perkiraan kerugiannya dalam Rupiah.
 | [docs/07-mencoba-di-laptop.md](docs/07-mencoba-di-laptop.md) | Cara menyalakan aplikasi di laptop, daftar uji sebelum dan sesudah deploy, templat perbaikan |
 | [docs/08-desain-antarmuka.md](docs/08-desain-antarmuka.md) | Identitas biru, referensi desain, logo, dan validasi perombakan antarmuka |
 | [docs/09-panduan-emergent.md](docs/09-panduan-emergent.md) | Aturan kerja agen Emergent: peta proyek, hemat kredit, konsistensi tampilan, PWA |
-| [prompts/](prompts/) | Prompt bernomor untuk Emergent, dipakai berurutan |
+| [prompts/](prompts/) | Prompt bernomor untuk Emergent, dipakai berurutan: [1](prompts/01-deploy-dan-ringkasan-ai.md) deploy dan Ringkasan AI, [2](prompts/02-tarik-fitur-produk.md) tarik fitur multi-produk |
 
 ## Cara kerja
 
@@ -60,9 +60,10 @@ mendapat depot contoh sendiri. Petunjuk lengkap ada di [panduan mencoba](docs/07
 - [x] Spesifikasi diperiksa ulang: hitungan Rupiah tanpa dobel, demo per pengunjung, celah muatan dan bon ditutup
 - [x] Aplikasi lengkap (semua fitur kecuali Ringkasan AI) dibangun dan lulus tes otomatis serta uji antarmuka
 - [x] Tampilan dirombak: identitas biru, logo tetesan air, PWA; login contoh `admin / admin` dan `kurir / kurir`
-- [ ] Kode terbaru diunggah ke GitHub
+- [x] Versi yang lulus tes diunggah ke GitHub (`main`)
 - [ ] Ditarik Emergent dan di-deploy, lalu Ringkasan AI ditambahkan
 - [ ] Submit ke lomba
-- [ ] Fitur multi-produk (LPG, galon bermerek, galon baru, isi wadah kecil) dan tambalan 2 celah anti-curang
+- [x] Fitur multi-produk (LPG, galon bermerek, galon baru, isi wadah kecil), penjualan di depot, dan tambalan 2 celah anti-curang (R9 galon kosong, rit kemarin wajib ditutup) dibangun dan lulus 45 tes
+- [ ] Fitur multi-produk digabung ke `main` dan ditarik Emergent (prompt 2)
 - [ ] Catatan kurir 7 hari terakhir terkumpul
 - [ ] Uji coba di depot keluarga (angka nyata untuk penilaian dampak bisnis)

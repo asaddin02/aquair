@@ -54,6 +54,17 @@ Centang yang sudah berjalan sesuai harapan.
 - [ ] Konfirmasi toko → Kirim lewat WhatsApp → Buka halaman toko → jawab "Tidak" → tanda R8 muncul di Radar.
 - [ ] Stiker QR, Bon, Galon di luar, Perawatan mesin, Kepatuhan, Unduh data, Pengaturan.
 
+**Produk lain dan penjualan di depot (depot contoh)**
+- [ ] Beranda kurir menampilkan "LPG 3 kg: sisa 3 tabung" dan "Air galon bermerek: sisa 2 galon".
+- [ ] Jual ke rumah → **Tambah produk lain** → LPG 3 kg → Simpan → struk berisi 2 produk dan totalnya.
+- [ ] Jual ke toko → "1,2 km dari toko" → tambah LPG → LPG juga dihitung harga rumah Rp22.000.
+- [ ] Selesai rit & setor → isi LPG dibawa pulang lebih sedikit dan galon kosong kurang 1 → peringatan
+      selisih muncul → Kirim → Radar Rudi hari ini berisi R7 LPG dan R9 galon kosong.
+- [ ] Bos → **Produk & harga** → Tambah produk (misalnya Galon baru Rp35.000) → kartunya muncul.
+- [ ] Bos → **Penjualan di depot** → Isi wadah kecil → jumlah 3 → Catat → total bertambah Rp6.000 →
+      Batal dengan alasan → total kembali.
+- [ ] Pengaturan → **Nilai galon kosong**, dan Unduh data → **Penjualan di depot**.
+
 **Depot sungguhan (persiapan uji coba di depot keluarga)**
 - [ ] **Daftarkan depot** dengan email kamu.
 - [ ] Menu Kurir → Tambah kurir → catat PIN yang muncul (hanya tampil sekali).
