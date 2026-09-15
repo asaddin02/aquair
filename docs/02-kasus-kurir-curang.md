@@ -76,18 +76,22 @@ bulan (lihat riset). Selisih yang dikantongi bisa hampir menyamai gaji itu sendi
 | 4 | **Kewajaran stok toko** | Setiap toko punya kapasitas simpan dan perkiraan laku per hari. Sistem memperkirakan stok berjalan dan menandai antaran ke toko yang seharusnya masih penuh. | Toko asli dicatat berlebih — persis kasus "toko masih punya stok" | Perkiraan awal bisa meleset (bos bisa menyetel) |
 | 5 | **Konfirmasi pemilik toko** | Tautan konfirmasi mingguan lewat WhatsApp ("minggu ini tercatat 12 galon, benar?"), ditambah cek acak harian 3 toko yang bisa dikirim bos dengan satu ketukan. | Semua jenis catatan palsu | Kurir berkolusi dengan toko (jarang, karena toko tidak diuntungkan) |
 | 6 | **Rasio toko:rumah** | Porsi toko per kurir per hari dibandingkan dengan garis dasar dari hari-hari yang terverifikasi. | Pola umum yang janggal, misalnya 90% toko | Butuh beberapa hari data terverifikasi |
-| 7 | **Setoran dihitung sistem** | Uang yang harus disetor = penjualan terverifikasi × harga yang berlaku. Galon isi yang dibawa pulang dan galon kosong dihitung saat kurir kembali. | Galon terjual yang tidak dicatat, selisih uang | — |
+| 7 | **Setoran dihitung sistem** | Uang yang harus disetor = penjualan tunai × harga yang berlaku. Muatan berangkat dicek bos, bukan hanya ditulis kurir. Galon isi yang dibawa pulang dan galon kosong dihitung saat kurir kembali. Bon hanya untuk pelanggan yang diizinkan bos, dan ditagih sampai lunas. | Galon terjual yang tidak dicatat, muatan yang ditulis kurang, penjualan tunai yang ditulis bon, selisih uang | — |
 | 8 | **Lompatan lokasi mustahil** | Jarak dan waktu antar-pencatatan berurutan diperiksa. Perpindahan yang terlalu cepat untuk motor ditandai. | GPS palsu, pencatatan borongan di satu tempat | — |
 
 ## Contoh yang dilihat bos di Radar Kecurangan
 
 > **Rudi — Selasa, 15 Sep** · risiko **tinggi**
-> - 36 dari 40 galon dicatat sebagai toko (90%). Rata-rata hari terverifikasi: 45%.
-> - 21 penjualan toko tanpa scan QR → dihitung harga rumah.
-> - Toko Sumber Rejeki menerima 6 galon, padahal perkiraan stoknya masih 9 dari kapasitas 10.
+> - 36 dari 40 galon dicatat sebagai toko (90%). Garis dasar depot: 45%.
+> - 21 galon toko tanpa bukti → dihitung harga rumah.
+> - Toko Sumber Rejeki menerima 6 galon, padahal perkiraan stoknya masih 7 dari kapasitas 10.
 > - QR Toko Maju dipindai 1,2 km dari lokasi toko.
 >
-> **Perkiraan selisih hari ini: Rp21.000.** [Kirim cek ke 3 toko] [Tandai sudah dicek]
+> **Tagihan kembali: Rp21.000 · Perkiraan bocor: Rp3.000** [Kirim cek ke 3 toko] [Tandai sudah dicek]
+
+Dua angka itu sengaja dipisah. **Tagihan kembali** adalah uang yang sudah diamankan aturan
+harga rumah. **Perkiraan bocor** adalah uang yang mungkin masih hilang. Hitungan lengkapnya
+ada di spesifikasi bagian 4.4.
 
 ## Yang sengaja tidak dilakukan
 

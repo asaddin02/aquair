@@ -21,8 +21,14 @@ keluarganya.
   - Satu submission per peserta. Nama dan deskripsi dibekukan sesudah 20 Sep.
   - Rubrik: dampak bisnis 30%, upvote 20%, penyelesaian masalah 20%, penggunaan Emergent
     15%, UI/UX 15%.
-- **Emergent adalah pembangun utama kode.** Claude/Codex menulis spesifikasi, prompt,
-  review, dan data contoh. Jangan menyunting kode yang sama dari dua tempat bersamaan.
+- **Pembagian kerja (diputuskan Asadin, 15 Sep 2026):** Claude membangun dan menguji aplikasi
+  lengkap di repo ini (`backend/` FastAPI, `frontend/` React + PWA) sampai semua fungsi bisa
+  dicoba Asadin di laptop. Emergent lalu menarik repo ini lewat "Pull from GitHub",
+  menyesuaikan, menambah **Ringkasan AI** (Universal Key hanya ada di Emergent), dan deploy.
+  Setelah kode diserahkan ke Emergent, Claude berhenti menyunting kode; perubahan berikutnya
+  lewat prompt di `prompts/`. Jangan menyunting kode yang sama dari dua tempat bersamaan.
+- **Sumber kebenaran aturan bisnis** tetap `docs/03-spesifikasi-produk.md`. Prototipe di
+  `desain/prototipe/` hanya acuan tampilan.
 - **Tidak ada angka karangan.** Angka dampak bisnis di pitch hanya boleh berasal dari uji
   coba nyata, riset bersumber, atau contoh yang jelas diberi label "ilustrasi".
 - **Repo ini publik.** Jangan menaruh nama asli orang, nomor telepon, kredensial, kunci

@@ -20,8 +20,10 @@ Tahap 1 yang sudah berjalan.
   benar / berbeda.
   - Tombol "Kirim lewat WhatsApp" membuka `https://wa.me/<nomor>?text=<pesan>` berisi
     tautan konfirmasi, jadi pesan dikirim dari HP bos sendiri.
-- **Jawaban berbeda** membuat tanda **R8** dengan perkiraan Rupiah
-  (beda galon × selisih harga) di Radar Kecurangan.
+- **Jawaban berbeda** membuat tanda **R8** di Radar Kecurangan. Perkiraan Rupiah-nya
+  mengikuti spesifikasi bagian 4.2 dan masuk ke **Perkiraan bocor**. Rupiah hanya dihitung
+  bila toko menjawab lebih sedikit dari catatan, dikurangi Rupiah R3 toko itu pada minggu
+  yang sama supaya galon yang sama tidak dihitung dua kali.
 
 ## 2. Cek acak harian
 Tombol **"Cek 3 toko hari ini"** di Radar:
@@ -36,7 +38,8 @@ Tombol **"Cek 3 toko hari ini"** di Radar:
 - Halaman **"Galon di luar"** berisi:
   - total galon di pelanggan,
   - daftar per pelanggan (terbesar dulu),
-  - pelanggan yang saldonya tidak berkurang selama > 14 hari.
+  - pelanggan dengan saldo > 0 yang tidak mengembalikan satu pun galon kosong selama
+    > 14 hari (pelanggan yang rutin tukar galon tidak ikut masuk).
 - Bos bisa mengoreksi saldo dengan alasan, dan koreksinya tercatat di `audit_log`.
 
 ## 4. Peta rit
@@ -53,9 +56,20 @@ Tombol **"Cek 3 toko hari ini"** di Radar:
   memakai waktu HP untuk urutan, tetapi tetap mencatat waktu server saat diterima.
 - Kirim ulang tidak boleh membuat penjualan ganda: gunakan ID unik yang dibuat di HP.
 
+## 6. Depot demo
+- **Tombol WhatsApp di depot demo hanya menampilkan pratinjau pesan** dan tidak membuka
+  `wa.me`, karena nomor contoh bisa saja milik orang sungguhan.
+- Tambahkan ke pembuat depot demo:
+  - saldo galon dari riwayat penjualan contoh, dengan 4 pelanggan yang tidak mengembalikan
+    galon kosong selama > 14 hari,
+  - konfirmasi minggu lalu untuk 3 toko: 2 menjawab benar, 1 toko langganan Rudi menjawab
+    lebih sedikit (memunculkan R8).
+- Peta rit di depot demo memakai lokasi simulasi yang sudah ada.
+
 ## Selesai bila
 1. Tautan konfirmasi bisa dibuka tanpa login, dan jawaban "berbeda" memunculkan R8 di Radar.
-2. Tombol WhatsApp membuka pesan yang sudah terisi.
+2. Di depot sungguhan, tombol WhatsApp membuka pesan yang sudah terisi. Di depot demo, hanya
+   pratinjau pesan yang tampil.
 3. Saldo galon berubah benar setelah penjualan, dan daftar "tidak kembali > 14 hari" muncul
    di data demo.
 4. Peta rit menampilkan titik dan warna status.

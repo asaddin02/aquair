@@ -29,8 +29,8 @@ Sumber: [emergent.sh/ai-contests/building-indonesia](https://emergent.sh/ai-cont
 
 | Tanggal | Target | Pelaksana |
 |---|---|---|
-| Sel 15 Sep | Riset, spesifikasi, prompt (selesai). Top-up dan Join the Contest. Mulai Tahap 1. | Asadin + AI |
-| Rab 16 Sep | Tahap 1 berjalan di preview. Uji alur rit dan Radar dengan data demo. | Emergent |
+| Sel 15 Sep | Riset, spesifikasi, prompt (selesai). Top-up dan Join the Contest. Mulai Tahap 1. **Keluarga mulai mengumpulkan catatan kurir 7 hari terakhir** ([06](06-uji-coba-depot-keluarga.md)). | Asadin + AI + keluarga |
+| Rab 16 Sep | Tahap 1 berjalan di preview. Uji dengan [05-panduan-uji-tahap-1.md](05-panduan-uji-tahap-1.md). | Emergent + Asadin |
 | **Kam 17 Sep** | **Deploy dan submit.** Mulai kampanye upvote. Daftarkan toko keluarga dan cetak stiker QR. | Asadin |
 | Jum 18 – Sab 19 Sep | Tahap 2. **Uji coba di depot keluarga** 2–3 hari. | Emergent + keluarga |
 | **Min 20 Sep** | Tahap 3 bila sempat. **Kunci nama dan deskripsi dengan angka nyata dari uji coba** sebelum 23:59. | Asadin |
@@ -66,12 +66,13 @@ Sumber: [emergent.sh/ai-contests/building-indonesia](https://emergent.sh/ai-cont
 1. **0–15 s — masalah:** "Kurir bawa 40 galon. Toko Rp3.000, rumah Rp4.000. Catatannya
    selalu 36 toko." Tampilkan catatan lama.
 2. **15–40 s — kurir:** masuk sebagai Kurir. Jual ke rumah (dua ketukan). Jual ke toko:
-   simulasi scan QR → status terverifikasi. Coba "Toko tanpa QR" → aplikasi menyatakan
-   dihitung harga rumah.
-3. **40–70 s — bos:** Radar Kecurangan untuk Rudi: 90% toko, 21 klaim tanpa bukti, toko
-   melebihi kapasitas, perkiraan selisih dalam Rupiah. Buka detail rit.
-4. **70–90 s — dampak:** kartu "tagihan kembali bulan ini" dan grafik porsi toko yang
-   turun. Tutup dengan angka uji coba keluarga.
+   simulasi scan QR di lokasi toko → status terverifikasi. Ulangi dengan "1,2 km dari toko"
+   → aplikasi menyatakan dihitung harga rumah.
+3. **40–70 s — bos:** tekan "Lihat sebagai: Bos". Penjualan tadi sudah ada di rit Rudi.
+   Buka Radar 30 hari: hari-hari lama Rudi dengan 90% toko, 21 galon toko tanpa bukti, toko
+   melebihi kapasitas, lengkap dengan Rupiah-nya.
+4. **70–90 s — dampak:** kartu "Tagihan kembali 30 hari" dan grafik porsi toko Rudi yang
+   turun (diberi label simulasi). Tutup dengan angka uji coba keluarga.
 
 ## Kampanye upvote (tanpa imbalan)
 

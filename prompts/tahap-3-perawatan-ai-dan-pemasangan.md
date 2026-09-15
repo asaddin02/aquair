@@ -35,19 +35,28 @@ tahap sebelumnya.
 - **Server menghitung semua angka lebih dulu**, lalu mengirimnya ke model sebagai JSON:
   - galon terjual per jenis,
   - uang seharusnya vs disetor,
-  - tanda Radar per kurir beserta perkiraan Rupiah,
+  - Tagihan kembali dan Perkiraan bocor, hari ini dan 30 hari (dua angka terpisah),
+  - tanda Radar per kurir beserta perkiraan Rupiah, dan jumlah hari berisiko tinggi dalam
+    30 hari,
   - komponen perawatan yang segera diganti.
 - Instruksi sistem untuk model:
   - tulis maksimal 5 kalimat dalam Bahasa Indonesia sederhana untuk pemilik depot,
   - mulai dari hal yang paling butuh tindakan,
   - **dilarang menyebut angka yang tidak ada di data**,
+  - jangan menjumlahkan Tagihan kembali dan Perkiraan bocor,
   - jika tidak ada masalah, katakan terus terang.
 - Tampilkan di atas dasbor bos, lengkap dengan waktu dibuat dan tombol "Buat ulang".
   Simpan ringkasan per hari supaya tidak memanggil model setiap kali halaman dibuka.
 - Kalau pemanggilan model gagal, tampilkan "Ringkasan belum tersedia". Dasbor lain tetap
   berjalan.
+- **Di depot demo**, ringkasan dibuat hanya saat tombol ditekan, maksimal 3 kali per depot
+  demo, supaya kredit tidak habis oleh pengunjung.
 
-## 4. Pemasangan di HP (PWA)
+## 4. Data demo
+Tambahkan ke pembuat depot demo: riwayat perawatan dengan 1 komponen terlambat dan 1
+komponen segera, serta SLHS yang habis berlaku dalam 20 hari.
+
+## 5. Pemasangan di HP (PWA)
 - Tambahkan manifest dan ikon AQUAIR, supaya layar kurir dan bos bisa dipasang ke layar
   utama Android.
 - Tambahkan tombol **"Pasang aplikasi"** di landing dan di layar kurir, dengan petunjuk
@@ -55,6 +64,6 @@ tahap sebelumnya.
 
 ## Selesai bila
 1. Komponen dengan tanggal lewat interval muncul sebagai "terlambat" di dasbor.
-2. Ringkasan AI di depot demo menyebut Rudi dan perkiraan selisihnya, dengan angka yang sama
-   persis seperti di Radar.
+2. Ringkasan AI di depot demo menyebut Rudi beserta Tagihan kembali 30 hari-nya, dengan
+   angka yang sama persis seperti di dasbor.
 3. Aplikasi bisa dipasang ke layar utama HP Android dari Chrome.
