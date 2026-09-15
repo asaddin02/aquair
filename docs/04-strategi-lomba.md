@@ -20,7 +20,7 @@ Sumber: [emergent.sh/ai-contests/building-indonesia](https://emergent.sh/ai-cont
 | Kriteria | Bobot | Jawaban AQUAIR |
 |---|---|---|
 | Dampak bisnis & potensi skala | 30% | Uang yang bocor setiap hari dan terukur dalam Rupiah ("tagihan kembali"). Pasarnya 78.378 depot terdaftar, dan air isi ulang adalah sumber air minum utama bagi 34,49% rumah tangga. Pola harga ganda toko/rumah juga ada di distribusi LPG, es batu, dan roti, jadi solusinya bisa diperluas. |
-| Upvote | 20% | Submit Kamis 17 Sep supaya punya 8 hari untuk kampanye (lihat bawah). |
+| Upvote | 20% | Submit Rabu 16 Sep supaya punya 9 hari untuk kampanye (lihat bawah). |
 | Penyelesaian masalah | 20% | Satu masalah yang tajam dan nyata dari depot keluarga, dengan mekanisme yang menghapus insentif curang, bukan sekadar mencatat. |
 | Penggunaan Emergent | 15% | Kode ditarik ke Emergent lewat integrasi GitHub, dilengkapi Ringkasan AI dengan Universal Key, lalu di-deploy dan dirawat di Emergent (web + backend + MongoDB). |
 | UI/UX | 15% | Layar kurir dua tombol besar. Dasbor bos menaruh angka Rupiah paling depan. Mode demo bisa dicoba juri dalam 1 menit. |
@@ -30,8 +30,8 @@ Sumber: [emergent.sh/ai-contests/building-indonesia](https://emergent.sh/ai-cont
 | Tanggal | Target | Pelaksana |
 |---|---|---|
 | Sel 15 Sep | Riset, spesifikasi, dan aplikasi lengkap yang lulus tes di laptop (selesai). Top-up dan Join the Contest. **Keluarga mulai mengumpulkan catatan kurir 7 hari terakhir** ([06](06-uji-coba-depot-keluarga.md)). | Asadin + AI + keluarga |
-| Rab 16 Sep | Versi yang lulus tes diunggah ke GitHub, di-deploy Emergent, lalu **submit** ([prompt 1](../prompts/01-deploy-dan-ringkasan-ai.md)). Mulai kampanye upvote. Claude membangun fitur multi-produk dan tambalan celah di laptop. | Asadin + Emergent + Claude |
-| **Kam 17 Sep** | Fitur multi-produk dicoba di laptop, diunggah, ditarik Emergent, dan di-deploy ulang (gratis). Daftarkan depot keluarga dan cetak stiker QR. | Asadin + Emergent |
+| Rab 16 Sep | Aplikasi lengkap (termasuk multi-produk) diunggah ke GitHub. Emergent menjalankan [prompt deploy](../prompts/deploy-ke-emergent.md): tes, Ringkasan AI, lalu **deploy sekali** dan **submit**. Mulai kampanye upvote. | Asadin + Emergent |
+| **Kam 17 Sep** | Daftarkan depot keluarga, isi produk dan harga aslinya, cetak stiker QR, lalu coba kamera dan GPS di HP kurir. | Asadin |
 | Jum 18 – Sab 19 Sep | **Uji coba di depot keluarga** 2–3 hari. Perbaikan kecil lewat Emergent bila perlu. | Keluarga + Emergent |
 | **Min 20 Sep** | **Kunci nama dan deskripsi dengan angka nyata dari uji coba** sebelum 23:59. | Asadin |
 | s.d. Jum 25 Sep | Kampanye upvote dan perbaikan kecil. | Asadin |
@@ -79,7 +79,7 @@ Sumber: [emergent.sh/ai-contests/building-indonesia](https://emergent.sh/ai-cont
 Setiap pemberi vote perlu akun Emergent gratis. Satu akun hanya bisa memberi satu vote per
 aplikasi.
 
-- **Lingkaran terdekat lebih dulu (17 Sep):** keluarga, teman, grup WhatsApp alumni dan
+- **Lingkaran terdekat lebih dulu (16 Sep):** keluarga, teman, grup WhatsApp alumni dan
   kampus. Kirim tautan showcase beserta video 90 detik dan langkah membuat akun.
 - **Komunitas yang relevan:** grup dan forum pengusaha depot air minum, UMKM, dan
   distribusi. Ceritakan kasusnya — ini masalah yang dikenali banyak pemilik usaha.

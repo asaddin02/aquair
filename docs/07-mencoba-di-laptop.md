@@ -119,8 +119,8 @@ berjalan di alamat HTTPS. Pakai HP Android dengan Chrome.
 
 **Sebelum kode diserahkan ke Emergent:** tulis ke Claude: layar mana, apa yang ditekan, apa yang
 muncul, dan apa yang seharusnya. Claude memperbaiki, menjalankan ulang tes, lalu kamu coba lagi.
-Setelah semuanya sesuai, kode diunggah ke GitHub dan ditarik Emergent dengan prompt bernomor di
-[prompts/](../prompts/), mulai dari [prompt 1](../prompts/01-deploy-dan-ringkasan-ai.md).
+Setelah semuanya sesuai, kode diunggah ke GitHub dan ditarik Emergent dengan
+[prompts/deploy-ke-emergent.md](../prompts/deploy-ke-emergent.md).
 
 **Sesudah kode diserahkan ke Emergent:** perbaikan dikerjakan Emergent. Kirim satu masalah per pesan
 supaya bagian lain tidak ikut berubah:

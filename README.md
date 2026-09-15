@@ -38,7 +38,7 @@ perkiraan kerugiannya dalam Rupiah.
 | [docs/07-mencoba-di-laptop.md](docs/07-mencoba-di-laptop.md) | Cara menyalakan aplikasi di laptop, daftar uji sebelum dan sesudah deploy, templat perbaikan |
 | [docs/08-desain-antarmuka.md](docs/08-desain-antarmuka.md) | Identitas biru, referensi desain, logo, dan validasi perombakan antarmuka |
 | [docs/09-panduan-emergent.md](docs/09-panduan-emergent.md) | Aturan kerja agen Emergent: peta proyek, hemat kredit, konsistensi tampilan, PWA |
-| [prompts/](prompts/) | Prompt bernomor untuk Emergent, dipakai berurutan: [1](prompts/01-deploy-dan-ringkasan-ai.md) deploy dan Ringkasan AI, [2](prompts/02-tarik-fitur-produk.md) tarik fitur multi-produk |
+| [prompts/deploy-ke-emergent.md](prompts/deploy-ke-emergent.md) | Satu-satunya prompt untuk Emergent: tarik repo, tes, Ringkasan AI, siap deploy |
 
 ## Cara kerja
 
@@ -49,10 +49,10 @@ mendapat depot contoh sendiri. Petunjuk lengkap ada di [panduan mencoba](docs/07
 1. **Claude** (dan Codex untuk perombakan tampilan) membangun dan menguji aplikasi di repo ini.
 2. **Asadin** mencobanya di laptop dengan [docs/07-mencoba-di-laptop.md](docs/07-mencoba-di-laptop.md).
 3. Kode diunggah ke GitHub. **Emergent** menarik repo lewat "Pull from GitHub", lalu menjalankan
-   [prompt 1](prompts/01-deploy-dan-ringkasan-ai.md): tes, deploy, Ringkasan AI.
-4. **Asadin** menekan Submit Your App di Emergent.
-5. Fitur berikutnya dibangun Claude di laptop, diunggah, lalu ditarik Emergent dengan prompt bernomor
-   berikutnya dan di-deploy ulang (gratis).
+   [prompts/deploy-ke-emergent.md](prompts/deploy-ke-emergent.md): tes, Ringkasan AI, siap deploy.
+4. **Asadin** menekan Deploy, mencoba alamatnya, lalu Submit Your App.
+5. Perbaikan berikutnya dibangun Claude di laptop, diunggah, lalu ditarik Emergent dan di-deploy ulang.
+   Deploy ulang tidak menambah kredit.
 
 ## Status
 
@@ -61,9 +61,8 @@ mendapat depot contoh sendiri. Petunjuk lengkap ada di [panduan mencoba](docs/07
 - [x] Aplikasi lengkap (semua fitur kecuali Ringkasan AI) dibangun dan lulus tes otomatis serta uji antarmuka
 - [x] Tampilan dirombak: identitas biru, logo tetesan air, PWA; login contoh `admin / admin` dan `kurir / kurir`
 - [x] Versi yang lulus tes diunggah ke GitHub (`main`)
-- [ ] Ditarik Emergent dan di-deploy, lalu Ringkasan AI ditambahkan
+- [ ] Ditarik Emergent: tes, Ringkasan AI, lalu deploy sekali
 - [ ] Submit ke lomba
 - [x] Fitur multi-produk (LPG, galon bermerek, galon baru, isi wadah kecil), penjualan di depot, dan tambalan 2 celah anti-curang (R9 galon kosong, rit kemarin wajib ditutup) dibangun dan lulus 45 tes
-- [ ] Fitur multi-produk digabung ke `main` dan ditarik Emergent (prompt 2)
 - [ ] Catatan kurir 7 hari terakhir terkumpul
 - [ ] Uji coba di depot keluarga (angka nyata untuk penilaian dampak bisnis)

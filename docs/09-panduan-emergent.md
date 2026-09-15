@@ -95,9 +95,10 @@ aturan tampilan, aturan PWA, dan batas yang tidak boleh dilanggar. Aturan bisnis
 - Endpoint kurir tidak pernah mengembalikan `qr_token`, kecuali `/api/kurir/demo/toko-simulasi` di depot demo.
 - Depot demo tidak pernah meminta kamera atau lokasi asli perangkat.
 - Jangan mengubah `backend/aquair/aturan.py` kecuali prompt memintanya. Tes contoh hitungan 4.4 harus tetap lulus.
-- Batas demo: 10 depot demo baru per IP pengunjung per jam. IP dibaca fungsi `alamat_ip` di `api_publik.py` dan
-  diatur lewat `AQUAIR_HEADER_IP` (header dari proxy tepercaya, misalnya `cf-connecting-ip`) atau
-  `AQUAIR_PROXY_TEPERCAYA` (jumlah proxy di `X-Forwarded-For`, bawaan 1). Hasilnya terlihat di `/api/demo/ip-saya`.
+- Batas depot contoh: 10 per IP pengunjung per jam (`AQUAIR_BATAS_DEMO` bila perlu dinaikkan). IP dibaca fungsi
+  `alamat_ip` di `api_publik.py`: header CDN (`cf-connecting-ip`, `true-client-ip`) dipakai lebih dulu, lalu
+  `X-Forwarded-For`. Bisa dipaksa lewat `AQUAIR_HEADER_IP` atau `AQUAIR_PROXY_TEPERCAYA`. Hasilnya terlihat di
+  `/api/demo/ip-saya`.
 - Jangan menaruh kredensial, kunci API, berkas `.env`, atau data pribadi di repo. Repo ini publik.
 
 ## 7. Serah terima

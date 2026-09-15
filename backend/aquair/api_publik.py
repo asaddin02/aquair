@@ -122,23 +122,31 @@ class MulaiDemo(BaseModel):
     depot_id: str | None = Field(None, max_length=64)
 
 
-def alamat_ip(request: Request) -> str:
-    """IP pengunjung untuk batas depot demo, diatur lewat lingkungan tanpa mengubah kode.
+def angka_env(nama: str, bawaan: int, minimal: int = 1) -> int:
+    try:
+        return max(minimal, int(os.environ.get(nama, bawaan)))
+    except ValueError:
+        return bawaan
 
-    - AQUAIR_HEADER_IP: header dari proxy tepercaya yang berisi IP asli pengunjung (misalnya cf-connecting-ip).
-    - AQUAIR_PROXY_TEPERCAYA: jumlah proxy yang menambahkan nilai ke X-Forwarded-For (bawaan 1 = nilai terakhir).
-    Nilai yang ditambahkan proxy tepercaya tidak bisa dipalsukan pengunjung. Cek hasilnya di /api/demo/ip-saya.
+
+def alamat_ip(request: Request) -> str:
+    """IP pengunjung untuk batas depot contoh. Urutannya dari yang paling bisa dipercaya.
+
+    1. `AQUAIR_HEADER_IP` bila diisi: header dari proxy tepercaya (misalnya `cf-connecting-ip`).
+    2. Header CDN yang biasa dipakai dan ditulis ulang oleh CDN-nya sendiri.
+    3. `X-Forwarded-For`, diambil nilai ke-`AQUAIR_PROXY_TEPERCAYA` dari belakang (bawaan 1 = nilai terakhir,
+       yang ditambahkan proxy terdekat).
+    4. Alamat koneksi langsung.
+
+    Tanpa ini, semua pengunjung bisa terbaca datang dari satu alamat proxy dan berbagi satu batas.
+    Hasilnya bisa dilihat di `/api/demo/ip-saya`.
     """
-    header = os.environ.get("AQUAIR_HEADER_IP", "").strip().lower()
-    if header and request.headers.get(header):
-        return request.headers[header].split(",")[0].strip()
+    for nama in (os.environ.get("AQUAIR_HEADER_IP", "").strip().lower(), "cf-connecting-ip", "true-client-ip"):
+        if nama and request.headers.get(nama):
+            return request.headers[nama].split(",")[0].strip()
     rantai = [x.strip() for x in request.headers.get("x-forwarded-for", "").split(",") if x.strip()]
     if rantai:
-        try:
-            lompat = max(1, int(os.environ.get("AQUAIR_PROXY_TEPERCAYA", "1")))
-        except ValueError:
-            lompat = 1
-        return rantai[-min(lompat, len(rantai))]
+        return rantai[-min(angka_env("AQUAIR_PROXY_TEPERCAYA", 1), len(rantai))]
     return request.client.host if request.client else "tidak-diketahui"
 
 
@@ -163,7 +171,7 @@ async def mulai_demo(b: MulaiDemo, request: Request):
             return {"depot_id": depot["_id"], "nama_depot": depot["nama"], "baru": False,
                     "token_bos": await buat_token(bos), "token_kurir": await buat_token(kurir)}
     ip = alamat_ip(request)
-    if await d.demo_requests.count_documents({"ip": ip}) >= BATAS_DEMO_PER_JAM:
+    if await d.demo_requests.count_documents({"ip": ip}) >= angka_env("AQUAIR_BATAS_DEMO", BATAS_DEMO_PER_JAM):
         galat(429, "Terlalu banyak depot contoh dari jaringan ini. Coba lagi dalam satu jam.")
     await d.demo_requests.insert_one({"_id": id_baru(), "ip": ip, "created_at": sekarang()})
     hasil = await buat_depot_demo()

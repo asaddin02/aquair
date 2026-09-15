@@ -263,15 +263,24 @@ async def test_login_juri_mematuhi_batas_depot_demo(klien):
     assert await db().depots.count_documents({}) == jumlah
 
 
-async def test_alamat_ip_bisa_diatur_lewat_lingkungan(klien, monkeypatch):
+async def test_alamat_ip_pengunjung_dan_batas_demo_bisa_diatur(klien, monkeypatch):
     rantai = {"X-Forwarded-For": "palsu-dari-pengunjung, ip-pengunjung, ip-cdn"}
-    assert (await klien.get("/api/demo/ip-saya", headers=rantai)).json()["ip_dipakai"] == "ip-cdn"
-    monkeypatch.setenv("AQUAIR_PROXY_TEPERCAYA", "2")
-    assert (await klien.get("/api/demo/ip-saya", headers=rantai)).json()["ip_dipakai"] == "ip-pengunjung"
-    monkeypatch.setenv("AQUAIR_HEADER_IP", "cf-connecting-ip")
-    hasil = (await klien.get("/api/demo/ip-saya", headers={**rantai, "CF-Connecting-IP": "ip-asli"})).json()
+    ip = lambda h: klien.get("/api/demo/ip-saya", headers=h)  # noqa: E731
+    assert (await ip(rantai)).json()["ip_dipakai"] == "ip-cdn"
+    # Header CDN dipakai lebih dulu supaya pengunjung tidak berbagi satu alamat proxy.
+    hasil = (await ip({**rantai, "CF-Connecting-IP": "ip-asli"})).json()
     assert hasil["ip_dipakai"] == "ip-asli" and hasil["cf_connecting_ip"] == "ip-asli"
-    assert (await klien.get("/api/demo/ip-saya", headers=rantai)).json()["ip_dipakai"] == "ip-pengunjung"
+    monkeypatch.setenv("AQUAIR_PROXY_TEPERCAYA", "2")
+    assert (await ip(rantai)).json()["ip_dipakai"] == "ip-pengunjung"
+    monkeypatch.setenv("AQUAIR_HEADER_IP", "x-real-ip")
+    assert (await ip({**rantai, "X-Real-IP": "ip-dari-proxy"})).json()["ip_dipakai"] == "ip-dari-proxy"
+    monkeypatch.delenv("AQUAIR_HEADER_IP")
+    monkeypatch.delenv("AQUAIR_PROXY_TEPERCAYA")
+    # Batas depot contoh per jam bisa dinaikkan lewat lingkungan tanpa mengubah kode.
+    monkeypatch.setenv("AQUAIR_BATAS_DEMO", "1")
+    satu = {"X-Forwarded-For": "uji-batas-lingkungan"}
+    assert (await klien.post("/api/demo/mulai", headers=satu, json={})).status_code == 200
+    assert (await klien.post("/api/demo/mulai", headers=satu, json={})).status_code == 429
 
 
 async def test_konfirmasi_pemilik_toko_memunculkan_r8(klien):

@@ -401,7 +401,9 @@ itu:
 - Bilah atas depot demo berisi label **"Data contoh"** dan sakelar **"Lihat sebagai: Bos |
   Kurir"**.
 - Depot demo terhapus otomatis **24 jam** sesudah dibuat.
-- Maksimal 10 depot demo baru per alamat IP per jam.
+- Maksimal 10 depot demo baru per alamat IP pengunjung per jam, supaya database tidak dibanjiri. Alamat
+  pengunjung diambil dari header CDN bila ada, lalu `X-Forwarded-For`; semuanya bisa diatur lewat variabel
+  lingkungan dan dicek di `/api/demo/ip-saya`, supaya pengunjung tidak berbagi satu alamat proxy.
 - Selama data disiapkan, tampilkan "Menyiapkan depot contoh…". Simpan data sekaligus
   (`insert_many`) supaya cepat.
 - Endpoint masuk demo hanya bisa membuat sesi untuk depot `is_demo`, tidak pernah untuk

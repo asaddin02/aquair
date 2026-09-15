@@ -24,12 +24,12 @@ keluarganya.
 - **Pembagian kerja (diputuskan Asadin, 15 Sep 2026):** Claude membangun dan menguji aplikasi
   di repo ini (`backend/` FastAPI, `frontend/` React + PWA); Codex merombak tampilannya.
   Emergent hanya punya 110 kredit (deploy 50 kredit/bulan, deploy ulang gratis), jadi hanya
-  mengerjakan yang wajib di Emergent: menarik repo, deploy, **Ringkasan AI** (Universal Key), dan
-  menarik pembaruan. Emergent mengikuti prompt bernomor di `prompts/` dan
-  `docs/09-panduan-emergent.md`. Versi yang lulus tes di-deploy dan di-submit lebih dulu; fitur
-  multi-produk dan tambalan celah dibangun Claude di laptop, lalu ditarik Emergent dan di-deploy
-  ulang. Jangan menyunting kode dari dua tempat bersamaan: tarik versi terbaru dari GitHub
-  sebelum mulai, simpan ke GitHub sesudah selesai.
+  mengerjakan yang wajib di Emergent: menarik repo, **Ringkasan AI** (Universal Key), dan deploy.
+  Emergent mengikuti `prompts/deploy-ke-emergent.md` dan `docs/09-panduan-emergent.md`. Asadin ingin
+  sekali jalan: satu prompt, satu kali deploy, lalu ditinggal. Deploy ulang tidak menambah kredit,
+  jadi perbaikan berikutnya tetap dibangun Claude di laptop lalu ditarik Emergent. Jangan menyunting
+  kode dari dua tempat bersamaan: tarik versi terbaru dari GitHub sebelum mulai, simpan ke GitHub
+  sesudah selesai.
 - **Sumber kebenaran aturan bisnis** tetap `docs/03-spesifikasi-produk.md`. Acuan tampilan
   adalah aplikasi yang berjalan dan `docs/08-desain-antarmuka.md`.
 - **Tidak ada angka karangan.** Angka dampak bisnis di pitch hanya boleh berasal dari uji
