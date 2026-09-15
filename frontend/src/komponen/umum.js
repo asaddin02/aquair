@@ -85,13 +85,23 @@ export function Toggle({ nyala, onUbah, label, disabled }) {
 }
 
 export function Stepper({ label, nilai, onUbah, min = 0, max = 500, hint }) {
+  const [ketikan, setKetikan] = useState(String(nilai));
+  useEffect(() => { setKetikan(String(nilai)); }, [nilai]);
+  const tetapkan = () => {
+    const angka = Number(ketikan);
+    const hasil = ketikan.trim() === '' || !Number.isFinite(angka) ? nilai : Math.min(max, Math.max(min, Math.trunc(angka)));
+    setKetikan(String(hasil));
+    onUbah(hasil);
+  };
   const ubah = (d) => onUbah(Math.min(max, Math.max(min, (Number(nilai) || 0) + d)));
   return (
     <div className="field">
       <span>{label}{hint && <span className="hint"> {hint}</span>}</span>
       <div className="stepper">
         <button type="button" onClick={() => ubah(-1)} aria-label={`Kurangi ${label}`} disabled={nilai <= min}>−</button>
-        <output className="num" aria-live="polite">{nilai}</output>
+        <input className="num quantity-input" type="text" inputMode="numeric" aria-label={label} value={ketikan}
+          onFocus={(e) => e.target.select()} onChange={(e) => setKetikan(e.target.value.replace(/\D/g, ''))}
+          onBlur={tetapkan} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }} />
         <button type="button" onClick={() => ubah(1)} aria-label={`Tambah ${label}`} disabled={nilai >= max}>+</button>
       </div>
     </div>
@@ -104,6 +114,8 @@ export function Modal({ judul, onTutup, children }) {
   tutup.current = onTutup;
   useEffect(() => {
     const sebelum = document.activeElement;
+    const overflowSebelum = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     const pertama = kotak.current?.querySelector('input, select, textarea, button');
     (pertama || kotak.current)?.focus();
     const tekan = (e) => {
@@ -117,7 +129,7 @@ export function Modal({ judul, onTutup, children }) {
       }
     };
     document.addEventListener('keydown', tekan);
-    return () => { document.removeEventListener('keydown', tekan); sebelum?.focus?.(); };
+    return () => { document.removeEventListener('keydown', tekan); document.body.style.overflow = overflowSebelum; sebelum?.focus?.(); };
   }, []);
   return (
     <div className="modal-back" onMouseDown={(e) => e.target === e.currentTarget && onTutup()}>
@@ -137,7 +149,7 @@ export function DemoBar({ peran }) {
   const ganti = (p) => { if (p !== peran) { lihatSebagai(p); pergi(p === 'bos' ? '/bos' : '/kurir'); } };
   return (
     <div className="demo-bar no-print">
-      <span>DATA CONTOH</span>
+      <span className="demo-label"><span className="status-dot" />MODE DEMO<span className="demo-explanation"> · Data contoh, bebas dijelajahi</span></span>
       <span className="row" style={{ '--gap': '8px' }}>
         <span className="small" style={{ fontWeight: 500 }}>Lihat sebagai</span>
         <span className="seg" role="group" aria-label="Lihat sebagai">
@@ -151,43 +163,95 @@ export function DemoBar({ peran }) {
 
 // ---------------------------------------------------------------- pasang aplikasi (PWA)
 let tundaanPasang = null;
+let sedangMemasang = false;
+let pemasanganSelesai = false;
+const kabariPemasangan = () => window.dispatchEvent(new Event('aquair:status-pasang'));
+const statusPemasangan = () => ({
+  bisa: !!tundaanPasang,
+  memasang: sedangMemasang,
+  terpasang: pemasanganSelesai || !!window.matchMedia?.('(display-mode: standalone)').matches || !!navigator.standalone,
+});
 if (typeof window !== 'undefined') {
-  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); tundaanPasang = e; window.dispatchEvent(new Event('aquair:bisa-pasang')); });
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    tundaanPasang = e;
+    kabariPemasangan();
+  });
+  window.addEventListener('appinstalled', () => {
+    pemasanganSelesai = true;
+    tundaanPasang = null;
+    kabariPemasangan();
+  });
 }
 
 export function usePasang() {
-  const [bisa, setBisa] = useState(!!tundaanPasang);
-  const terpasang = typeof window !== 'undefined' && window.matchMedia?.('(display-mode: standalone)').matches;
+  const [status, setStatus] = useState(statusPemasangan);
   useEffect(() => {
-    const h = () => setBisa(true);
-    window.addEventListener('aquair:bisa-pasang', h);
-    window.addEventListener('appinstalled', () => setBisa(false));
-    return () => window.removeEventListener('aquair:bisa-pasang', h);
+    const ubah = () => setStatus(statusPemasangan());
+    const layar = window.matchMedia?.('(display-mode: standalone)');
+    window.addEventListener('aquair:status-pasang', ubah);
+    layar?.addEventListener('change', ubah);
+    ubah();
+    return () => {
+      window.removeEventListener('aquair:status-pasang', ubah);
+      layar?.removeEventListener('change', ubah);
+    };
   }, []);
   const pasang = async () => {
-    if (!tundaanPasang) return false;
-    tundaanPasang.prompt();
-    await tundaanPasang.userChoice;
+    if (sedangMemasang) return 'menunggu';
+    if (!tundaanPasang || !window.isSecureContext) return 'petunjuk';
+    const acara = tundaanPasang;
     tundaanPasang = null;
-    setBisa(false);
-    return true;
+    sedangMemasang = true;
+    kabariPemasangan();
+    try {
+      await acara.prompt();
+      const pilihan = await acara.userChoice;
+      return pilihan.outcome === 'accepted' ? 'diterima' : 'ditutup';
+    } catch {
+      return 'petunjuk';
+    } finally {
+      sedangMemasang = false;
+      kabariPemasangan();
+    }
   };
-  return { bisa, terpasang, pasang };
+  return { ...status, pasang };
+}
+
+function PetunjukPasang() {
+  const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (!window.isSecureContext) return <div className="stack">
+    <div className="banner sky"><Ikon n="ponsel" s={22} /><p>Pemasangan aplikasi belum tersedia di alamat lokal ini.</p></div>
+    <p>Buka AQUAIR melalui alamat <b>HTTPS</b> untuk memasang aplikasi di HP. Alamat yang sedang dibuka masih memakai HTTP.</p>
+    <p>Anda tetap bisa memakai AQUAIR di browser. Jika menu browser menawarkan <b>Tambahkan ke layar utama</b>, pintasan tersebut membuka halaman ini di browser.</p>
+  </div>;
+  return <div className="stack">
+    <p>Pasang AQUAIR agar bisa dibuka langsung dari layar utama.</p>
+    {ios ? <ol><li>Buka AQUAIR di <b>Safari</b>.</li><li>Ketuk <b>Bagikan</b>, lalu <b>Tambah ke Layar Utama</b>.</li><li>Aktifkan <b>Buka sebagai App</b> jika tersedia, lalu ketuk <b>Tambah</b>.</li></ol> : <ol><li>Buka menu <b>⋮</b> di Chrome.</li><li>Pilih <b>Tambahkan ke layar utama</b> atau <b>Instal aplikasi</b>.</li><li>Pilih <b>Instal</b> untuk memasang AQUAIR.</li></ol>}
+    <p className="small muted">Pilihan pemasangan mengikuti dukungan browser. Jika belum muncul, gunakan browser biasa (bukan Incognito), muat ulang, atau periksa apakah AQUAIR sudah terpasang.</p>
+  </div>;
+}
+
+export function TombolPasang({ className = 'btn btn-primary', ringkas = false }) {
+  const { terpasang, memasang, pasang } = usePasang();
+  const [petunjuk, setPetunjuk] = useState(false);
+  if (terpasang) return null;
+  return <>
+    <button type="button" className={className} aria-label="Pasang aplikasi" disabled={memasang} onClick={async () => { if (await pasang() === 'petunjuk') setPetunjuk(true); }}>
+      <Ikon n="unduh" s={18} /><span className={ringkas ? 'install-label' : undefined}>{memasang ? 'Membuka…' : ringkas ? 'Pasang' : 'Pasang aplikasi'}</span>
+    </button>
+    {petunjuk && <Modal judul="Pasang AQUAIR" onTutup={() => setPetunjuk(false)}><PetunjukPasang /><button className="btn btn-primary btn-block" style={{ marginTop: 20 }} onClick={() => setPetunjuk(false)}>Mengerti</button></Modal>}
+  </>;
 }
 
 export function KartuPasang({ onTutup }) {
-  const { bisa, terpasang, pasang } = usePasang();
-  const [petunjuk, setPetunjuk] = useState(false);
+  const { terpasang } = usePasang();
   if (terpasang) return null;
   return (
-    <div className="card" style={{ border: '2px solid var(--brand)' }}>
-      <b>Pasang AQUAIR di HP</b>
-      <p className="small" style={{ margin: '6px 0 10px' }}>Buka lebih cepat dari layar utama, seperti aplikasi biasa.</p>
-      <div className="row">
-        <button className="btn btn-primary" onClick={async () => { if (!(await pasang())) setPetunjuk(true); }}><Ikon n="unduh" s={18} />Pasang aplikasi</button>
-        {onTutup && <button className="btn btn-ghost" onClick={onTutup}>Nanti</button>}
-      </div>
-      {(petunjuk || !bisa) && <p className="small muted" style={{ marginTop: 8 }}>Tombol tidak memunculkan apa-apa? Di Chrome, ketuk menu ⋮ lalu "Tambahkan ke layar utama".</p>}
+    <div className="card install-card">
+      <span className="install-icon"><Ikon n="ponsel" s={23} /></span><b>AQUAIR di layar utama</b>
+      <p className="small" style={{ margin: '6px 0 10px' }}>{window.isSecureContext ? 'Buka lebih cepat dari layar utama, seperti aplikasi biasa.' : 'Pemasangan di HP tersedia melalui alamat HTTPS. Saat ini AQUAIR bisa dipakai di browser.'}</p>
+      <div className="row"><TombolPasang />{onTutup && <button className="btn btn-ghost" onClick={onTutup}>Nanti</button>}</div>
     </div>
   );
 }

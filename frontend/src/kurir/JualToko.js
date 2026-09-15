@@ -3,6 +3,7 @@ import { api } from '../api';
 import { rp } from '../format';
 import Ikon from '../komponen/Ikon';
 import { KotakGalat, Memuat, useData } from '../komponen/umum';
+import { Cari, Kosong } from '../komponen/Ruang';
 import FormPenjualan from './FormPenjualan';
 import { KTop, useKurir } from './KurirApp';
 
@@ -55,6 +56,7 @@ export default function JualToko() {
   const { beranda } = useKurir();
   const depot = beranda.data?.depot;
   const demo = depot?.is_demo;
+  const [cari, setCari] = useState('');
   const [langkah, setLangkah] = useState('pindai');
   const [toko, setToko] = useState(null);
   const [posisi, setPosisi] = useState(null);
@@ -85,19 +87,23 @@ export default function JualToko() {
       <>
         <KTop judul={demo ? 'Simulasi scan QR toko' : 'Scan QR toko'} />
         <div className="k-body">
+<div className="mobile-intro"><span className="eyebrow">LANGKAH 1 · VERIFIKASI TOKO</span><h2>Scan. Cocokkan. Antar.</h2><p>QR dan lokasi memastikan harga toko yang tepat.</p></div>
           <KotakGalat galat={galat} />
           {demo ? (
             <>
               <div className="scan-view" aria-hidden="true"><div className="frame" /><p>Di depot sungguhan, kamera terbuka di sini</p></div>
               <p className="small muted">Depot contoh tidak memakai kamera. Pilih toko untuk menyimulasikan hasil scan.</p>
-              {simulasi.memuat ? <Memuat /> : (simulasi.data || []).map((t) => (
-                <button key={t.id} className="list-btn" onClick={() => { setToko(t); setLangkah('posisi'); }}>
+              <Cari value={cari} onChange={setCari} placeholder="Cari toko untuk simulasi…" />
+              <KotakGalat galat={simulasi.galat} onUlang={simulasi.muatUlang} />
+              {simulasi.memuat ? <Memuat /> : (simulasi.data || []).filter((t) => t.nama.toLowerCase().includes(cari.toLowerCase())).map((t) => (
+                <button key={t.id} className="list-btn customer-pick" onClick={() => { setToko(t); setLangkah('posisi'); }}>
                   <Ikon n="qr" s={24} /><span className="grow"><b>{t.nama}</b><br /><span className="small muted">Stiker QR terpasang</span></span>
                 </button>
               ))}
             </>
           ) : langkah === 'pindai' ? <PemindaiQR onHasil={hasilScan} /> : <button className="btn btn-lg btn-block" onClick={() => { setGalat(null); setLangkah('pindai'); }}><Ikon n="kamera" />Scan ulang</button>}
-          <button className="btn btn-block" onClick={() => { setGalat(null); setLangkah('tanpa'); }}><Ikon n="awas" s={18} />Toko tanpa QR (stiker rusak/hilang)</button>
+          {demo && !simulasi.memuat && !(simulasi.data || []).some((t) => t.nama.toLowerCase().includes(cari.toLowerCase())) && <Kosong judul="Toko tidak ditemukan">Coba kata kunci lain.</Kosong>}
+          <button className="btn btn-block" onClick={() => { setGalat(null); setCari(''); setLangkah('tanpa'); }}><Ikon n="awas" s={18} />Toko tanpa QR (stiker rusak/hilang)</button>
         </div>
       </>
     );
@@ -110,8 +116,9 @@ export default function JualToko() {
         <div className="k-body">
           <div className="banner warn"><Ikon n="awas" s={22} /><span>Tanpa scan QR, penjualan <b>dihitung harga rumah {rp(depot.harga_rumah)}</b>. Kalau stikernya rusak, minta bos menyetujui harga toko.</span></div>
           <KotakGalat galat={semuaToko.galat} onUlang={semuaToko.muatUlang} />
-          {semuaToko.memuat ? <Memuat /> : (semuaToko.data || []).map((t) => (
-            <button key={t.id} className="list-btn" onClick={() => { setToko({ ...t, tanpaQr: true }); setLangkah('form'); }}>
+          <Cari value={cari} onChange={setCari} placeholder="Cari nama toko…" />
+          {semuaToko.memuat ? <Memuat /> : (semuaToko.data || []).filter((t) => t.nama.toLowerCase().includes(cari.toLowerCase())).map((t) => (
+            <button key={t.id} className="list-btn customer-pick" onClick={() => { setToko({ ...t, tanpaQr: true }); setLangkah('form'); }}>
               <Ikon n="awas" s={24} /><span className="grow"><b>{t.nama}</b></span>
             </button>
           ))}
@@ -143,6 +150,7 @@ export default function JualToko() {
     <>
       <KTop judul={toko.nama} />
       <div className="k-body">
+<div className="mobile-step-label">LANGKAH 2 · CATAT PENJUALAN</div>
         <div className="row" style={{ '--gap': '6px' }}>
           {toko.tanpaQr ? <span className="chip warn">Tanpa QR — harga rumah</span> : <span className="chip ok"><Ikon n="qr" s={14} />QR sah</span>}
           {demo && !toko.tanpaQr && <span className={`chip ${posisi === 'jauh' ? 'warn' : 'ok'}`}><Ikon n="lokasi" s={14} />{posisi === 'jauh' ? '1,2 km dari toko (simulasi)' : 'Di lokasi toko (simulasi)'}</span>}

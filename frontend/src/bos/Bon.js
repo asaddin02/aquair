@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { Cari, Catatan, Kosong, Ringkasan } from '../komponen/Ruang';
 import { api } from '../api';
 import { rp, tglPanjang } from '../format';
 import Ikon from '../komponen/Ikon';
@@ -6,6 +8,7 @@ import { Halaman } from './umumBos';
 
 export default function Bon() {
   const toast = useToast();
+  const [cari, setCari] = useState('');
   const { data, galat, memuat, muatUlang } = useData(() => api('/bos/bon'), []);
   const lunas = async (p) => {
     try {
@@ -19,25 +22,17 @@ export default function Bon() {
   return (
     <Halaman judul="Bon belum lunas">
       <KotakGalat galat={galat} onUlang={muatUlang} />
-      {memuat && !data ? <Memuat /> : (
-        <>
-          <div className="grid-2">
-            <div className="hero-tile"><div className="eyebrow">Belum dibayar</div><div className="angka">{rp(data.total)}</div>
-              <p>dari {data.pelanggan.length} pelanggan. Tekan Lunas saat uangnya sudah diterima.</p></div>
-            <div className="card flat small" style={{ alignSelf: 'start' }}><b>Kenapa bon dicatat terpisah?</b>
-              <p style={{ marginTop: 4, color: 'var(--ink-2)' }}>Kalau bon bebas dipilih dan tidak pernah ditagih, kurir bisa menulis penjualan tunai sebagai bon lalu mengantongi uangnya. Karena itu bon hanya bisa dipilih untuk pelanggan yang diizinkan, dan setiap bon menunggu di sini sampai lunas.</p></div>
-          </div>
-          {data.pelanggan.length === 0 ? <div className="card">Semua bon sudah lunas.</div> : (
-            <div className="grid-2">{data.pelanggan.map((p) => (
-              <article className="card stack" style={{ '--gap': '10px' }} key={p.customer_id}>
-                <div className="row between"><b style={{ fontSize: 16 }}>{p.nama}</b><span className="num" style={{ font: '800 22px/1 var(--f-head)' }}>{rp(p.total)}</span></div>
-                <ul className="list small">{p.catatan.map((c, i) => <li key={i}><span className="grow">{tglPanjang(c.tanggal)}</span><span className="num">{c.galon_isi} galon × {rp(c.harga)}</span></li>)}</ul>
-                <button className="btn btn-primary" style={{ justifySelf: 'start', alignSelf: 'start' }} onClick={() => lunas(p)}><Ikon n="cek" s={18} />Lunas</button>
-              </article>
-            ))}</div>
-          )}
-        </>
-      )}
+      {memuat && !data ? <Memuat /> : data && <>
+        <Ringkasan items={[{ label: 'Total bon belum lunas', nilai: rp(data.total), ikon: 'uang', warna: 'amber' }, { label: 'Pelanggan dengan bon', nilai: data.pelanggan.length, ikon: 'orang' }, { label: 'Catatan penjualan', nilai: data.pelanggan.reduce((n, p) => n + p.catatan.length, 0), ikon: 'rit' }]} />
+        <div className="work-split"><div className="work-primary"><div className="directory-toolbar"><h2 className="section-title">Daftar tagihan</h2><Cari value={cari} onChange={setCari} placeholder="Cari pelanggan dengan bon…" /></div>
+          {data.pelanggan.filter((p) => p.nama.toLowerCase().includes(cari.toLowerCase())).map((p) => <article className="debt-card" key={p.customer_id}>
+            <header><span className="entity-icon"><Ikon n="orang" s={24} /></span><div><h3>{p.nama}</h3><p>{p.catatan.length} catatan belum dibayar</p></div><strong>{rp(p.total)}</strong></header>
+            <details><summary>Lihat rincian penjualan<Ikon n="kanan" s={17} /></summary><ul className="list">{p.catatan.map((c, i) => <li key={i}><span className="grow">{tglPanjang(c.tanggal)}</span><span>{c.galon_isi} galon × {rp(c.harga)}</span></li>)}</ul></details>
+            <footer><span>Tandai setelah pembayaran diterima.</span><button className="btn btn-primary" onClick={() => lunas(p)}><Ikon n="cek" s={18} />Lunas</button></footer>
+          </article>)}
+          {!data.pelanggan.filter((p) => p.nama.toLowerCase().includes(cari.toLowerCase())).length && <Kosong ikon="uang" judul={cari ? 'Pelanggan tidak ditemukan' : 'Semua bon sudah lunas'}>Tagihan yang belum dibayar akan tampil di sini.</Kosong>}
+        </div><div className="work-aside"><Catatan ikon="uang" judul="Tagih dengan catatan yang jelas">Buka rincian untuk melihat tanggal dan jumlah galon sebelum mengonfirmasi pembayaran.</Catatan><Catatan judul="Izin bon tetap di tangan Anda">Kurir hanya dapat memilih bon untuk pelanggan yang Anda izinkan. Pengaturan izin tersedia pada halaman Pelanggan.</Catatan></div></div>
+      </>}
     </Halaman>
   );
 }

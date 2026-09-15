@@ -3,6 +3,7 @@ import { api } from '../api';
 import { tglTahun } from '../format';
 import Ikon from '../komponen/Ikon';
 import { Chip, KotakGalat, Memuat, Toggle, useData, useToast } from '../komponen/umum';
+import { Catatan, Ringkasan } from '../komponen/Ruang';
 import { Halaman } from './umumBos';
 
 function ChipSisa({ hari }) {
@@ -43,9 +44,11 @@ export default function Kepatuhan() {
 
   return (
     <Halaman judul="Kepatuhan" kanan={<button className="btn btn-primary" onClick={simpan} disabled={kirim}>{kirim ? 'Menyimpan…' : 'Simpan'}</button>}>
+      <Ringkasan items={[{ label: 'Daftar periksa sesuai', nilai: `${draf.periksa.filter((c) => c.ok).length} / ${draf.periksa.length}`, ikon: 'cek' }, { label: 'Jadwal uji berikutnya', nilai: tglTahun(data.uji_lab_berikutnya), ikon: 'lab' }, { label: 'Masa berlaku SLHS', nilai: tglTahun(draf.slhs_berlaku_sampai), ikon: 'perisai' }]} />
       <KotakGalat galat={galatSimpan} />
-      <div className="grid-2">
-        <article className="card stack">
+      <div className="work-split"><div className="work-primary">
+      <div className="compliance-documents">
+        <article className="card stack document-card">
           <div className="row between"><div className="row" style={{ '--gap': '8px' }}><Ikon n="lab" s={20} /><b style={{ fontSize: 16 }}>Uji lab kualitas air</b></div><ChipSisa hari={data.uji_lab_sisa_hari} /></div>
           <div className="form-grid">
             <label className="field" htmlFor="kp-uji"><span>Uji terakhir</span><input id="kp-uji" type="date" className="input" value={draf.uji_lab_terakhir || ''} onChange={ubah('uji_lab_terakhir')} /></label>
@@ -53,7 +56,7 @@ export default function Kepatuhan() {
           </div>
           <p className="small muted">Uji berikutnya: <b>{tglTahun(data.uji_lab_berikutnya)}</b>. Isi interval sesuai ketentuan dinas kesehatan setempat.</p>
         </article>
-        <article className="card stack">
+        <article className="card stack document-card">
           <div className="row between"><div className="row" style={{ '--gap': '8px' }}><Ikon n="perisai" s={20} /><b style={{ fontSize: 16 }}>Sertifikat laik higiene (SLHS)</b></div><ChipSisa hari={data.slhs_sisa_hari} /></div>
           <div className="form-grid">
             <label className="field" htmlFor="kp-slhs"><span>Berlaku sampai</span><input id="kp-slhs" type="date" className="input" value={draf.slhs_berlaku_sampai || ''} onChange={ubah('slhs_berlaku_sampai')} /></label>
@@ -72,6 +75,7 @@ export default function Kepatuhan() {
           </li>
         ))}</ul>
       </section>
+      </div><div className="work-aside"><Catatan ikon="lab" judul="Catatan kualitas air">Simpan tanggal uji terakhir dan interval yang sesuai ketentuan dinas kesehatan setempat. Jadwal berikutnya dihitung dari catatan Anda.</Catatan><Catatan ikon="perisai" judul="Siapkan perpanjangan lebih awal">Pengingat SLHS muncul di dasbor 30 hari sebelum masa berlaku berakhir.</Catatan><button className="btn btn-primary btn-block" onClick={simpan} disabled={kirim}>{kirim ? 'Menyimpan…' : 'Simpan perubahan'}</button></div></div>
     </Halaman>
   );
 }

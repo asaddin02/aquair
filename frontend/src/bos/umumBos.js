@@ -6,13 +6,30 @@ import { Chip, ChipRisiko, KotakGalat } from '../komponen/umum';
 export const KonteksBos = createContext(null);
 export const useBos = () => useContext(KonteksBos);
 
+const KETERANGAN = {
+  Dasbor: 'Semua yang perlu Anda ketahui tentang depot, dalam satu pandangan.',
+  'Radar Kecurangan': 'Kenali pola yang tidak biasa. Periksa buktinya, lalu ambil keputusan.',
+  'Rit & setoran': 'Ikuti perjalanan galon dan cocokkan setiap setoran.',
+  Pelanggan: 'Kenali pelanggan Anda, dari rumah ke rumah dan toko ke toko.',
+  Persetujuan: 'Periksa pengajuan kurir dan tentukan tindak lanjutnya.',
+  Kurir: 'Kelola tim yang membawa usaha Anda setiap hari.',
+  'Stiker QR': 'Satu toko, satu identitas. Siapkan bukti di setiap titik antar.',
+  'Galon di luar': 'Lacak galon pinjaman sampai kembali ke depot.',
+  'Konfirmasi toko': 'Cocokkan catatan pengantaran langsung dengan pemilik toko.',
+  'Perawatan mesin': 'Jaga mesin tetap prima dan jadwal perawatan tetap tertata.',
+  Kepatuhan: 'Pantau jadwal uji kualitas air dan kelengkapan izin depot.',
+  'Bon belum lunas': 'Catatan piutang yang jelas, penagihan lebih mudah.',
+  'Unduh data': 'Simpan laporan depot untuk pemeriksaan dan pencatatan Anda.',
+  Pengaturan: 'Sesuaikan harga dan aturan dengan kebutuhan depot Anda.',
+};
+
 export function Halaman({ judul, kanan, children }) {
   useEffect(() => { document.title = `${judul} · AQUAIR`; }, [judul]);
   return (
-    <div className="app-main">
-      <div className="app-top no-print"><h2>{judul}</h2>{kanan && <div className="row" style={{ '--gap': '8px' }}>{kanan}</div>}</div>
+    <main className="app-main" id="konten-depot">
+      <div className="app-top no-print"><div><div className="page-eyebrow">DEPOT / {judul === 'Dasbor' ? 'RINGKASAN' : 'KELOLA'}</div><h1>{judul}</h1>{KETERANGAN[judul] && <p>{KETERANGAN[judul]}</p>}</div>{kanan && <div className="row" style={{ '--gap': '8px' }}>{kanan}</div>}</div>
       <div className="app-body">{children}</div>
-    </div>
+    </main>
   );
 }
 

@@ -46,7 +46,7 @@ export default function Hasil() {
   };
 
   return (
-    <div className="k-body" style={{ paddingTop: 22 }}>
+    <div className="k-body result-body">
       <div className={`hasil ${kelas}`} role="status">
         <div className="ikon"><Ikon n={ok ? 'cek' : rumah ? 'rumah' : 'awas'} s={30} /></div>
         <div className="judul">{judul}</div>
@@ -54,10 +54,7 @@ export default function Hasil() {
         <div className="harga num">{x.galon_isi} galon × {rp(x.harga_berlaku)} = {rp(x.galon_isi * x.harga_berlaku)}</div>
         <p style={{ fontSize: 15 }}>{alasanStatus}</p>
       </div>
-      <div className="card flat small">
-        <b>{x.nama_pelanggan}</b> · galon kosong {x.galon_kosong} · {x.bayar}<br />
-        <span className="muted">Tercatat {jam(x.created_at)} (waktu server). Tidak bisa diubah; koreksi lewat bos.</span>
-      </div>
+      <section className="delivery-receipt"><header><span className="eyebrow">BUKTI PENGANTARAN</span><h2>{x.nama_pelanggan}</h2></header><dl><div><dt>Galon isi diserahkan</dt><dd>{x.galon_isi} galon</dd></div><div><dt>Galon kosong diambil</dt><dd>{x.galon_kosong} galon</dd></div><div><dt>Pembayaran</dt><dd>{x.bayar === 'bon' ? 'Bon' : 'Tunai'}</dd></div><div><dt>Waktu tercatat</dt><dd>{jam(x.created_at)}</dd></div><div className="receipt-total"><dt>Total penjualan</dt><dd>{rp(x.galon_isi * x.harga_berlaku)}</dd></div></dl><footer><Ikon n="perisai" s={17} />Tersimpan di depot. Koreksi diajukan melalui bos.</footer></section>
       {!ok && !rumah && <button className="btn btn-lg btn-block" onClick={() => setMinta(true)}>Minta bos setujui harga toko</button>}
       <button className="btn btn-primary btn-lg btn-block" onClick={() => pergi('/kurir')}>Kembali ke rit</button>
       {minta && (

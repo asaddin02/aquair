@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api';
 import { jam } from '../format';
 import Ikon from '../komponen/Ikon';
+import { LangkahForm } from '../komponen/Ruang';
 import { KotakGalat, Memuat, Stepper, useToast } from '../komponen/umum';
 import { KTop, useKurir } from './KurirApp';
 
@@ -40,12 +41,15 @@ export default function Koreksi() {
     <>
       <KTop judul="Ajukan koreksi" />
       <div className="k-body">
-        <div className="card flat"><b>{x.nama_pelanggan}</b><br /><span className="small">{jam(x.created_at)} · {x.galon_isi} galon isi · {x.galon_kosong} kosong · {x.bayar}</span></div>
+        <div className="original-receipt"><span className="eyebrow">CATATAN TERSIMPAN</span><b>{x.nama_pelanggan}</b><br /><span className="small">{jam(x.created_at)} · {x.galon_isi} galon isi · {x.galon_kosong} kosong · {x.bayar}</span></div>
         <div className="banner sky"><Ikon n="perisai" s={22} /><span>Penjualan yang sudah tersimpan tidak bisa diubah atau dihapus kurir. Bos yang memutuskan koreksinya, dan semuanya tercatat.</span></div>
+<LangkahForm nomor="1" judul="Jumlah yang benar" ket="Catatan asli tetap disimpan untuk diperiksa bos.">
         <Stepper label="Galon isi yang benar" nilai={isi} min={1} max={200} onUbah={setIsi} />
         <Stepper label="Galon kosong yang benar" nilai={kosong} min={0} max={200} onUbah={setKosong} />
+</LangkahForm><LangkahForm nomor="2" judul="Jelaskan koreksinya">
         <label className="field" htmlFor="alasan-koreksi"><span>Alasan</span>
           <textarea id="alasan-koreksi" className="input" rows={3} value={alasan} onChange={(e) => setAlasan(e.target.value)} placeholder="Contoh: salah pencet jumlah galon" /></label>
+</LangkahForm>
         <KotakGalat galat={galat} />
         <button className="btn btn-primary btn-lg btn-block" onClick={submit} disabled={kirim || alasan.trim().length < 3 || (isi === x.galon_isi && kosong === x.galon_kosong)}>Kirim ke bos</button>
       </div>

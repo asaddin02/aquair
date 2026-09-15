@@ -1,7 +1,10 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+import './fonts.css';
 import './gaya.css';
+import './tampilan.css';
+import './pengalaman.css';
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -10,6 +13,6 @@ createRoot(document.getElementById('root')).render(
 );
 
 // PWA: service worker hanya di hasil build, supaya saat pengembangan tidak ada cache basi.
-if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+if (window.isSecureContext && 'serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
   window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
 }

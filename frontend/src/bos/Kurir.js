@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { api } from '../api';
 import Ikon from '../komponen/Ikon';
 import { Chip, KotakGalat, Memuat, Modal, Toggle, useData, useToast } from '../komponen/umum';
+import { Cari, Kosong, Ringkasan } from '../komponen/Ruang';
 import { Avatar, Halaman } from './umumBos';
 
 function ModalPin({ hasil, onTutup }) {
@@ -46,6 +47,7 @@ function TambahKurir({ onTutup, onSelesai }) {
 
 export default function Kurir() {
   const toast = useToast();
+  const [cari, setCari] = useState('');
   const [tambah, setTambah] = useState(false);
   const [pin, setPin] = useState(null);
   const { data, galat, memuat, muatUlang } = useData(() => api('/bos/kurir'), []);
@@ -71,23 +73,20 @@ export default function Kurir() {
 
   return (
     <Halaman judul="Kurir" kanan={<button className="btn btn-primary" onClick={() => setTambah(true)}><Ikon n="tambah" s={18} />Tambah kurir</button>}>
-      <p className="small muted" style={{ maxWidth: '65ch' }}>Kurir masuk dengan nomor HP dan PIN 6 angka, dan hanya melihat rit miliknya sendiri. 5 kali salah PIN mengunci akun 15 menit.</p>
+      <Ringkasan items={[{ label: 'Anggota tim', nilai: data?.length, ikon: 'orang' }, { label: 'Kurir aktif', nilai: (data || []).filter((k) => k.aktif).length, ikon: 'cek' }, { label: 'Sedang di jalan', nilai: (data || []).filter((k) => k.rit_hari_ini === 'aktif').length, ikon: 'rit' }]} />
+      <div className="directory-toolbar"><div><h2 className="section-title">Tim pengantaran</h2><p className="muted">Kelola akses dan lihat aktivitas kurir.</p></div><Cari value={cari} onChange={setCari} placeholder="Cari kurir…" /></div>
       <KotakGalat galat={galat} onUlang={muatUlang} />
-      {memuat && !data ? <Memuat /> : (
-        <div className="table-wrap"><table>
-          <thead><tr><th>Kurir</th><th>Nomor HP</th><th>Hari ini</th><th>Status</th><th /></tr></thead>
-          <tbody>{data.map((k) => (
-            <tr key={k.id}>
-              <td><div className="row" style={{ '--gap': '10px' }}><Avatar kurir={k} /><b>{k.nama}</b></div></td>
-              <td className="num">{k.no_hp || '—'}</td>
-              <td>{!k.rit_hari_ini ? <span className="muted">Tidak ada rit</span> : k.rit_hari_ini === 'aktif' ? <Chip jenis="sky">Di jalan</Chip> : <Chip jenis="ok" ikon="cek">Rit selesai</Chip>}
-                {k.dikunci_sampai && <div><Chip jenis="danger" ikon="kunci">Terkunci sampai {k.dikunci_sampai}</Chip></div>}</td>
-              <td><div className="row" style={{ '--gap': '8px', flexWrap: 'nowrap' }}><Toggle nyala={k.aktif} label={`Kurir ${k.nama} aktif`} onUbah={(v) => ubahAktif(k, v)} /><span className="small">{k.aktif ? 'Aktif' : 'Nonaktif'}</span></div></td>
-              <td className="r"><button className="btn" onClick={() => aturPin(k)}><Ikon n="kunci" s={16} />Atur ulang PIN</button></td>
-            </tr>
-          ))}</tbody>
-        </table></div>
-      )}
+      {memuat && !data ? <Memuat /> : <div className="team-grid">{(data || []).filter((k) => k.nama.toLowerCase().includes(cari.toLowerCase())).map((k) => <article className="team-card" key={k.id}>
+        <div className="team-cover"><span>ANGGOTA TIM</span><Chip jenis={k.aktif ? 'ok' : 'line'}>{k.aktif ? 'Aktif' : 'Nonaktif'}</Chip></div>
+        <div className="team-content"><Avatar kurir={k} /><h3>{k.nama}</h3><p className="muted">{k.no_hp || 'Nomor HP belum diisi'}</p>
+          <div className="team-activity"><span className="entity-icon"><Ikon n="rit" /></span><div><small>Aktivitas hari ini</small><b>{!k.rit_hari_ini ? 'Belum ada rit' : k.rit_hari_ini === 'aktif' ? 'Sedang mengantar' : 'Rit sudah selesai'}</b></div></div>
+          {k.dikunci_sampai && <Chip jenis="danger" ikon="kunci">Terkunci sampai {k.dikunci_sampai}</Chip>}
+          <div className="team-access"><span>Akses aplikasi</span><Toggle nyala={k.aktif} label={`Kurir ${k.nama} aktif`} onUbah={(v) => ubahAktif(k, v)} /></div>
+          <button className="btn btn-block" onClick={() => aturPin(k)}><Ikon n="kunci" s={17} />Atur ulang PIN</button>
+        </div>
+      </article>)}</div>}
+      {data && !(data || []).filter((k) => k.nama.toLowerCase().includes(cari.toLowerCase())).length && <Kosong ikon="orang" judul="Belum ada kurir yang cocok">Tambah anggota tim atau coba nama lain.</Kosong>}
+      <div className="inline-explainer"><Ikon n="kunci" /><p>Kurir masuk dengan nomor HP dan PIN 6 angka. Setiap kurir hanya dapat melihat ritnya sendiri; 5 kali salah PIN mengunci akun 15 menit.</p></div>
       {tambah && <TambahKurir onTutup={() => setTambah(false)} onSelesai={(h) => { setTambah(false); setPin(h); muatUlang({ diam: true }); }} />}
       {pin && <ModalPin hasil={pin} onTutup={() => setPin(null)} />}
     </Halaman>

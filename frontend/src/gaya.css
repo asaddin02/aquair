@@ -1,20 +1,20 @@
-/* AQUAIR — gaya aplikasi. Token warna mengikuti spesifikasi bagian 11 (diturunkan dari desain/prototipe). */
+/* AQUAIR — gaya aplikasi. Komponen dasar. Identitas biru diperbarui atas arahan pemilik proyek. */
 :root {
   color-scheme: light;
   --ground: #F8FAFC;
   --surface: #FFFFFF;
-  --surface-2: #F0F5F5;
-  --surface-3: #E3ECEB;
-  --ink: #0F2524;
-  --ink-2: #3D5553;
-  --ink-3: #5F7775;
-  --line: #D5E1E0;
-  --line-2: #B9CBC9;
-  --brand: #0F766E;
-  --brand-hover: #0B5F58;
+  --surface-2: #F3F6FB;
+  --surface-3: #E7EDF6;
+  --ink: #172B4D;
+  --ink-2: #475569;
+  --ink-3: #586B85;
+  --line: #E2E8F0;
+  --line-2: #CBD5E1;
+  --brand: #2563EB;
+  --brand-hover: #1D4ED8;
   --on-brand: #FFFFFF;
-  --brand-text: #0F766E;
-  --brand-soft: #DCEFEC;
+  --brand-text: #2563EB;
+  --brand-soft: #EBF2FF;
   --sky: #0284C7;
   --sky-text: #0369A1;
   --sky-soft: #E0F2FE;
@@ -29,7 +29,7 @@
   --ok-soft: #DCFCE7;
   --s-dimas: #0284C7;
   --s-rudi: #7C3AED;
-  --phone-bezel: #0F2524;
+  --phone-bezel: #172B4D;
   --shadow: 0 1px 2px rgb(15 37 36 / .06), 0 10px 30px rgb(15 37 36 / .08);
   --radius: 14px;
   --radius-sm: 9px;
@@ -40,9 +40,9 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --ground: #091312; --surface: #0F1D1C; --surface-2: #142625; --surface-3: #1B3230;
-    --ink: #E4EFEE; --ink-2: #AFC4C2; --ink-3: #87A09E; --line: #23403D; --line-2: #2F524E;
-    --brand: #0F766E; --brand-hover: #138A80; --on-brand: #FFFFFF; --brand-text: #5CCFC2; --brand-soft: #123A36;
+    --ground: #0B1220; --surface: #111C30; --surface-2: #18253B; --surface-3: #23334D;
+    --ink: #E8EEF9; --ink-2: #B8C7DF; --ink-3: #94A8C6; --line: #273953; --line-2: #3B5173;
+    --brand: #2563EB; --brand-hover: #3B82F6; --on-brand: #FFFFFF; --brand-text: #93C5FD; --brand-soft: #1A3159;
     --sky: #0EA5E9; --sky-text: #7DD3FC; --sky-soft: #0C2F44;
     --warn: #F59E0B; --warn-text: #FCD34D; --warn-soft: #3A2A0A;
     --danger: #EF4444; --danger-text: #FCA5A5; --danger-soft: #3D1515;
@@ -54,9 +54,9 @@
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --ground: #091312; --surface: #0F1D1C; --surface-2: #142625; --surface-3: #1B3230;
-  --ink: #E4EFEE; --ink-2: #AFC4C2; --ink-3: #87A09E; --line: #23403D; --line-2: #2F524E;
-  --brand: #0F766E; --brand-hover: #138A80; --on-brand: #FFFFFF; --brand-text: #5CCFC2; --brand-soft: #123A36;
+  --ground: #0B1220; --surface: #111C30; --surface-2: #18253B; --surface-3: #23334D;
+  --ink: #E8EEF9; --ink-2: #B8C7DF; --ink-3: #94A8C6; --line: #273953; --line-2: #3B5173;
+  --brand: #2563EB; --brand-hover: #3B82F6; --on-brand: #FFFFFF; --brand-text: #93C5FD; --brand-soft: #1A3159;
   --sky: #0EA5E9; --sky-text: #7DD3FC; --sky-soft: #0C2F44;
   --warn: #F59E0B; --warn-text: #FCD34D; --warn-soft: #3A2A0A;
   --danger: #EF4444; --danger-text: #FCA5A5; --danger-soft: #3D1515;
@@ -171,7 +171,7 @@ td.r, th.r { text-align: right; }
 .hasil .harga { font: 800 22px/1.2 var(--f-head); color: var(--ink); }
 .hasil .ikon { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); }
 .scan-view { aspect-ratio: 1; max-width: 100%; border-radius: 18px; background: #0b1413; position: relative; display: grid; place-items: center; overflow: hidden; }
-.scan-view .frame { width: 62%; aspect-ratio: 1; border: 4px solid #5CCFC2; border-radius: 16px; box-shadow: 0 0 0 999px rgb(0 0 0 / .45); }
+.scan-view .frame { width: 62%; aspect-ratio: 1; border: 4px solid #93C5FD; border-radius: 16px; box-shadow: 0 0 0 999px rgb(0 0 0 / .45); }
 .scan-view p { position: absolute; bottom: 14px; left: 0; right: 0; text-align: center; color: #fff; font-size: 15px; }
 .banner { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; font-size: 15px; }
 .banner.danger { background: var(--danger-soft); color: var(--danger-text); }
@@ -244,10 +244,10 @@ td.r, th.r { text-align: right; }
 .chart-tip .sw { display: inline-block; width: 10px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
 
 .qr-sheet { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
-.sticker { background: #fff; color: #0F2524; border: 2px dashed #B9CBC9; border-radius: 14px; padding: 14px; display: grid; gap: 8px; justify-items: center; text-align: center; }
+.sticker { background: #fff; color: #172B4D; border: 2px dashed #CBD5E1; border-radius: 14px; padding: 14px; display: grid; gap: 8px; justify-items: center; text-align: center; }
 .sticker canvas { width: 140px; height: 140px; image-rendering: pixelated; }
 .sticker b { font-family: var(--f-head); font-size: 16px; }
-.sticker .brand-mark { font: 700 11px/1 var(--f-mono); letter-spacing: .12em; color: #0F766E; }
+.sticker .brand-mark { font: 700 11px/1 var(--f-mono); letter-spacing: .12em; color: #2563EB; }
 
 .map { position: relative; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); background: var(--surface-2); }
 .map svg { display: block; width: 100%; height: auto; }
@@ -327,8 +327,8 @@ td.r, th.r { text-align: right; }
 @keyframes putar { to { transform: rotate(360deg); } }
 .csv { margin: 0; padding: 12px 14px; font: 12.5px/1.65 var(--f-mono); white-space: pre; color: var(--ink); }
 .sticker canvas { background: #fff; }
-.sticker .token { font: 500 11px/1 var(--f-mono); color: #5F7775; }
-.sticker .btn { min-height: 34px; background: #fff; color: #0F2524; border-color: #B9CBC9; }
+.sticker .token { font: 500 11px/1 var(--f-mono); color: #64748B; }
+.sticker .btn { min-height: 34px; background: #fff; color: #172B4D; border-color: #CBD5E1; }
 
 @media print {
   .rail, .stage-head, .app-nav, .app-top, .no-print { display: none !important; }

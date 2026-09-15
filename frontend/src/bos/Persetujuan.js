@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { api } from '../api';
 import { jarakTeks, NAMA_STATUS, tglPendek } from '../format';
 import { Chip, KotakGalat, Memuat, useData, useToast } from '../komponen/umum';
+import { Catatan, Kosong, Panel, Ringkasan, TabPilihan } from '../komponen/Ruang';
 import { Halaman, useBos } from './umumBos';
 
 const JENIS = { pelanggan: ['Pelanggan baru', 'sky'], harga: ['Minta harga toko', 'warn'], koreksi: ['Koreksi penjualan', 'brand'] };
@@ -49,28 +50,33 @@ function Kartu({ a, onSelesai }) {
 
 export default function Persetujuan() {
   const toast = useToast();
+  const [jenis, setJenis] = useState('semua');
   const { muatLencana } = useBos();
   const { data, galat, memuat, muatUlang } = useData(() => api('/bos/persetujuan'), []);
   const selesai = async (pesan) => { await muatUlang({ diam: true }); muatLencana(); toast(pesan); };
   return (
     <Halaman judul="Persetujuan">
-      <p className="muted small" style={{ maxWidth: '70ch' }}>Semua keputusan tercatat di log audit beserta alasannya. Penjualan yang disetujui untuk harga toko bernilai Rp0 di Radar.</p>
+      <Ringkasan items={[{ label: 'Menunggu keputusan', nilai: data?.menunggu.length, ikon: 'setuju', warna: 'amber' }, { label: 'Sudah diputuskan', nilai: data?.sudah.length, ikon: 'cek' }, { label: 'Permintaan harga toko', nilai: data?.menunggu.filter((a) => a.jenis === 'harga').length, ikon: 'toko' }]} />
+      <div className="work-split"><div className="work-primary">
+      <TabPilihan label="Jenis pengajuan" nilai={jenis} onUbah={setJenis} pilihan={[["semua", 'Semua'], ['harga', 'Harga toko'], ['koreksi', 'Koreksi'], ['pelanggan', 'Pelanggan baru']]} />
       <KotakGalat galat={galat} onUlang={muatUlang} />
       {memuat && !data ? <Memuat /> : (
         <>
-          {data?.menunggu.length ? <div className="stack">{data.menunggu.map((a) => <Kartu key={a.id} a={a} onSelesai={selesai} />)}</div>
-            : <div className="card">Tidak ada pengajuan yang menunggu keputusan.</div>}
-          {data?.sudah.length > 0 && (
-            <section className="card"><h3 style={{ fontSize: 16 }}>Sudah diputuskan</h3>
-              <ul className="list">{data.sudah.map((a) => (
-                <li key={a.id}><span className="grow"><b>{JENIS[a.jenis][0]} · {a.pelanggan}</b><br />
-                  <span className="small muted">dari {a.kurir.nama}{a.alasan_keputusan ? ` · Alasan: ${a.alasan_keputusan}` : ''}</span></span>
-                  <Chip jenis={HASIL[a.status][0]}>{HASIL[a.status][1]}</Chip></li>
-              ))}</ul>
-            </section>
-          )}
+          {data?.menunggu.filter((a) => jenis === 'semua' || a.jenis === jenis).length ? <div className="stack">{data.menunggu.filter((a) => jenis === 'semua' || a.jenis === jenis).map((a) => <Kartu key={a.id} a={a} onSelesai={selesai} />)}</div>
+            : <Kosong ikon="setuju" judul="Tidak ada pengajuan menunggu">Pengajuan kurir yang sesuai pilihan akan tampil di sini.</Kosong>}
         </>
       )}
+      </div><div className="work-aside"><Catatan judul="Keputusan Anda, tercatat jelas">Baca alasan kurir dan bukti yang tersedia. Setiap keputusan beserta alasannya tersimpan dalam log audit.</Catatan>
+      <Panel judul="Riwayat keputusan" ket="Pengajuan yang sudah ditindaklanjuti">{data?.sudah.length > 0 && (
+  <section className="decision-history">
+    <ul className="list">{data.sudah.map((a) => (
+      <li key={a.id}><span className="grow"><b>{JENIS[a.jenis][0]} · {a.pelanggan}</b><br />
+        <span className="small muted">dari {a.kurir.nama}{a.alasan_keputusan ? ` · Alasan: ${a.alasan_keputusan}` : ''}</span></span>
+        <Chip jenis={HASIL[a.status][0]}>{HASIL[a.status][1]}</Chip></li>
+    ))}</ul>
+  </section>
+)}
+</Panel></div></div>
     </Halaman>
   );
 }

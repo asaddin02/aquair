@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { api } from '../api';
 import { hariIniWib, tglTahun } from '../format';
 import { Chip, KotakGalat, Memuat, Modal, useData, useToast } from '../komponen/umum';
+import Ikon from '../komponen/Ikon';
+import { Catatan, Ringkasan } from '../komponen/Ruang';
 import { Halaman } from './umumBos';
 
 function UbahJadwal({ k, onTutup, onSimpan }) {
@@ -46,23 +48,23 @@ export default function Perawatan() {
   };
   return (
     <Halaman judul="Perawatan mesin">
-      <p className="muted small" style={{ maxWidth: '70ch' }}>Interval bawaan mengikuti umur pakai umum tiap komponen dan bisa diubah. Pengingat muncul di dasbor 7 hari sebelum jadwal.</p>
+      <Ringkasan items={[{ label: 'Komponen mesin', nilai: data?.length, ikon: 'alat' }, { label: 'Sudah lewat jadwal', nilai: (data || []).filter((k) => k.sisa_hari != null && k.sisa_hari < 0).length, ikon: 'awas', warna: 'amber' }, { label: 'Jatuh tempo 7 hari', nilai: (data || []).filter((k) => k.sisa_hari != null && k.sisa_hari >= 0 && k.sisa_hari <= 7).length, ikon: 'kalender' }]} />
+      <div className="work-split"><div className="work-primary">
       <KotakGalat galat={galat} onUlang={muatUlang} />
       {memuat && !data ? <Memuat /> : (
-        <div className="grid-2">{data.map((k) => {
+        <div className="maintenance-list">{(data || []).map((k) => {
           const belum = k.tanggal_terakhir == null;
           const pakai = belum ? 0 : Math.min(1, Math.max(0, 1 - k.sisa_hari / k.interval_hari));
           const [kelas, teks] = belum ? ['line', 'Tanggal belum diisi'] : k.sisa_hari < 0 ? ['danger', `Terlambat ${-k.sisa_hari} hari`] : k.sisa_hari <= 7 ? ['warn', `${k.sisa_hari} hari lagi`] : ['ok', `${k.sisa_hari} hari lagi`];
           return (
-            <article className="card stack" style={{ '--gap': '10px' }} key={k.id}>
-              <div className="row between"><b style={{ fontSize: 16 }}>{k.komponen}</b><Chip jenis={kelas} ikon={kelas === 'ok' ? 'cek' : belum ? undefined : 'awas'}>{teks}</Chip></div>
-              <div className="meter" role="img" aria-label={`${Math.round(pakai * 100)}% masa pakai terlewati`}><i className={kelas} style={{ width: `${Math.round(pakai * 100)}%` }} /></div>
-              <div className="row between small muted"><span>{belum ? 'Isi tanggal ganti terakhir' : `Diganti ${tglTahun(k.tanggal_terakhir)}`} · tiap {k.interval_hari} hari</span>{k.jadwal && <span>Jadwal {tglTahun(k.jadwal)}</span>}</div>
-              <div className="row"><button className="btn" onClick={() => ganti(k)}>Sudah diganti hari ini</button><button className="btn btn-ghost" onClick={() => setUbah(k)}>Ubah jadwal</button></div>
+            <article className={`maintenance-card ${kelas}`} key={k.id}>
+              <div className="maintenance-gauge" style={{ '--pakai': `${Math.round(pakai * 100)}%` }}><span><Ikon n={k.komponen.toLowerCase().includes('uv') ? 'bintang' : 'alat'} s={27} /><b>{Math.round(pakai * 100)}%</b></span></div>
+              <div className="maintenance-info"><div className="row between"><h3>{k.komponen}</h3><Chip jenis={kelas} ikon={kelas === 'ok' ? 'cek' : belum ? undefined : 'awas'}>{teks}</Chip></div><p>{belum ? 'Tanggal pemasangan belum diisi' : `Terakhir diganti ${tglTahun(k.tanggal_terakhir)}`}</p><dl><div><dt>Interval penggantian</dt><dd>{k.interval_hari} hari</dd></div><div><dt>Jadwal berikutnya</dt><dd>{k.jadwal ? tglTahun(k.jadwal) : 'Belum dijadwalkan'}</dd></div></dl><div className="row"><button className="btn btn-primary" onClick={() => ganti(k)}><Ikon n="cek" s={17} />Sudah diganti hari ini</button><button className="btn" onClick={() => setUbah(k)}>Ubah jadwal</button></div></div>
             </article>
           );
         })}</div>
       )}
+      </div><div className="work-aside"><Catatan ikon="alat" judul="Perawatan yang terencana">Persentase menunjukkan bagian interval yang sudah terlewati sejak penggantian terakhir. Sesuaikan interval dengan kondisi dan pemakaian mesin.</Catatan><Catatan ikon="kalender" judul="Pengingat sebelum jatuh tempo">Jadwal muncul di dasbor 7 hari sebelum penggantian. Tekan Sudah diganti hanya setelah komponen benar-benar diganti.</Catatan></div></div>
       {ubah && <UbahJadwal k={ubah} onTutup={() => setUbah(null)} onSimpan={async (p) => { setUbah(null); await muatUlang({ diam: true }); toast(p); }} />}
     </Halaman>
   );

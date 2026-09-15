@@ -1,5 +1,12 @@
 // Ikon garis sederhana. Setiap ikon selalu didampingi teks di layar (spesifikasi 11).
 const JALUR = {
+  panah: 'M4 12h16M14 6l6 6-6 6',
+  kanan: 'm9 5 7 7-7 7',
+  menu: 'M4 6h16M4 12h16M4 18h16',
+  cari: ['M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13z', 'm16 16 5 5'],
+  ponsel: ['M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z', 'M10 18h4'],
+  toko: ['M3 10h18l-2-6H5z', 'M5 10v10h14V10', 'M9 20v-6h6v6', 'M3 10c0 3 4 3 4 0 0 3 5 3 5 0 0 3 5 3 5 0 0 3 4 3 4 0'],
+  kalender: ['M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z', 'M7 3v4M17 3v4M3 11h18M7 15h2M12 15h2'],
   qr: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2zM16 16h2v2h-2z',
   rumah: ['M3 11 12 4l9 7', 'M5 10v10h14V10', 'M10 20v-6h4v6'],
   cek: 'm5 12 5 5 9-10',
@@ -41,11 +48,6 @@ export default function Ikon({ n, s = 20, className }) {
   );
 }
 
-export function Logo({ s = 26 }) {
-  return (
-    <svg width={s} height={s} viewBox="0 0 32 32" aria-hidden="true">
-      <path d="M16 2C11 9 6 14.5 6 20a10 10 0 0 0 20 0C26 14.5 21 9 16 2z" fill="var(--brand)" />
-      <path d="m11 20 3.5 3.5L21.5 16" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+export function Logo({ s = 32 }) {
+  return <img src="/brand/aquair-mark.png" width={s} height={s} alt="" aria-hidden="true" className="brand-symbol" />;
 }

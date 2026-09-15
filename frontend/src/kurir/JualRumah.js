@@ -3,6 +3,7 @@ import { api } from '../api';
 import { jarakTeks, rp } from '../format';
 import Ikon from '../komponen/Ikon';
 import { KotakGalat, Memuat } from '../komponen/umum';
+import { Cari, Kosong } from '../komponen/Ruang';
 import FormPenjualan from './FormPenjualan';
 import { KTop, useKurir } from './KurirApp';
 
@@ -12,6 +13,7 @@ export default function JualRumah() {
   const depot = beranda.data?.depot;
   const demo = depot?.is_demo;
   const adaDepot = !!depot;
+  const [cari, setCari] = useState('');
   const [langkah, setLangkah] = useState('pilih');
   const [pembeli, setPembeli] = useState(null);
   const [baru, setBaru] = useState({ nama: '', no_hp: '' });
@@ -62,7 +64,7 @@ export default function JualRumah() {
       <>
         <KTop judul={pembeli.nama} />
         <div className="k-body">
-          <span className="chip sky" style={{ alignSelf: 'start' }}><Ikon n="rumah" s={14} />Harga rumah {rp(depot.harga_rumah)}</span>
+          <div className="mobile-step-label">LANGKAH 2 · CATAT PENJUALAN</div><span className="chip sky" style={{ alignSelf: 'start' }}><Ikon n="rumah" s={14} />Harga rumah {rp(depot.harga_rumah)}</span>
           <FormPenjualan bodyDasar={bodyDasar} namaPelanggan={pembeli.nama} bolehBon={!pembeli.baru && pembeli.boleh_bon}
             alasanBon={pembeli.baru ? 'Pembeli baru selalu tunai.' : undefined} galonAwal={pembeli.baru ? 1 : 2} />
         </div>
@@ -74,16 +76,19 @@ export default function JualRumah() {
     <>
       <KTop judul="Jual ke rumah" />
       <div className="k-body">
+        <div className="mobile-intro"><span className="eyebrow">LANGKAH 1 · PELANGGAN</span><h2>Mengantar ke siapa?</h2><p>Pilih pelanggan atau catat pembeli baru.</p></div>
+        <Cari value={cari} onChange={setCari} placeholder="Cari pembeli rumah…" />
         <button className="btn btn-sky btn-lg btn-block" onClick={() => setLangkah('baru')}><Ikon n="tambah" />Pembeli baru</button>
         <KotakGalat galat={daftar.galat} />
         <div>
           <div className="eyebrow" style={{ marginBottom: 4 }}>{posisi || demo ? 'Terdekat dari posisimu' : 'Semua pembeli rumah'}</div>
-          {!daftar.data ? <Memuat /> : daftar.data.map((p) => (
-            <button key={p.id} className="list-btn" onClick={() => { setPembeli(p); setLangkah('form'); }}>
+          {!daftar.data ? <Memuat /> : daftar.data.filter((p) => p.nama.toLowerCase().includes(cari.toLowerCase())).map((p) => (
+            <button key={p.id} className="list-btn customer-pick" onClick={() => { setPembeli(p); setLangkah('form'); }}>
               <Ikon n="rumah" s={24} /><span className="grow"><b>{p.nama}</b><br />
                 <span className="small muted">{p.jarak_m != null ? jarakTeks(p.jarak_m) : 'Lokasi belum ada'}{p.boleh_bon ? ' · boleh bon' : ''}</span></span>
             </button>
           ))}
+          {daftar.data && !daftar.data.some((p) => p.nama.toLowerCase().includes(cari.toLowerCase())) && <Kosong judul="Pembeli belum ditemukan">Coba nama lain atau tambahkan pembeli baru.</Kosong>}
         </div>
       </div>
     </>

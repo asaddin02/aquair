@@ -4,6 +4,7 @@ import { api } from '../api';
 import { periodeTeks } from '../format';
 import Ikon from '../komponen/Ikon';
 import { Chip, KotakGalat, Memuat, Modal, useData, useToast } from '../komponen/umum';
+import { Cari, Kosong, Ringkasan, TabPilihan } from '../komponen/Ruang';
 import { Halaman, tautanWa } from './umumBos';
 
 const LABEL = { belum: ['Belum dikirim', 'line'], menunggu: ['Menunggu jawaban', 'sky'], benar: ['Benar', 'ok'], berbeda: ['Berbeda', 'danger'] };
@@ -34,6 +35,8 @@ function Kirim({ hasil, onTutup }) {
 }
 
 export default function Konfirmasi() {
+  const [cari, setCari] = useState('');
+  const [status, setStatus] = useState('semua');
   const [hasil, setHasil] = useState(null);
   const [galatKirim, setGalatKirim] = useState(null);
   const { data, galat, memuat, muatUlang } = useData(() => api('/bos/konfirmasi'), []);
@@ -56,23 +59,10 @@ export default function Konfirmasi() {
         <>
           <div><h3 style={{ fontSize: 17 }}>Minggu {periodeTeks(data.periode_mulai, data.periode_selesai)}</h3>
             <p className="small muted">Pemilik toko menjawab jumlah galon lewat tautan tanpa akun. Jawaban lebih sedikit dari catatan memunculkan tanda R8 di Radar.</p></div>
-          <div className="grid-4">{['belum', 'menunggu', 'benar', 'berbeda'].map((s) => (
-            <div className="card mini" key={s}><span className="ket">{LABEL[s][0]}</span><span className="angka" style={s === 'berbeda' && hitung(s) ? { color: 'var(--danger-text)' } : undefined}>{hitung(s)} toko</span></div>
-          ))}</div>
-          <div className="table-wrap"><table>
-            <thead><tr><th>Toko</th><th className="r">Tercatat</th><th>Status</th><th className="r">Menurut toko</th><th /></tr></thead>
-            <tbody>{data.toko.map((t) => (
-              <tr key={t.customer_id}>
-                <td><b>{t.nama}</b>{!t.no_wa && !data.is_demo && <div className="small muted">WA belum diisi</div>}</td>
-                <td className="r num">{t.galon_tercatat} galon</td>
-                <td><Chip jenis={LABEL[t.status][1]}>{LABEL[t.status][0]}</Chip></td>
-                <td className="r num">{t.galon_menurut_toko == null ? '—' : <>{t.galon_menurut_toko} galon{t.status === 'berbeda' && <span className="danger-t"> ({t.galon_menurut_toko - t.galon_tercatat > 0 ? '+' : '−'}{Math.abs(t.galon_menurut_toko - t.galon_tercatat)})</span>}</>}</td>
-                <td className="r">{t.status === 'berbeda' ? <Link className="btn btn-ghost" to="/bos/radar">Lihat R8 di Radar</Link>
-                  : t.status === 'benar' ? null : t.galon_tercatat === 0 ? <span className="small muted">Tidak ada antaran</span>
-                    : <button className="btn" onClick={() => kirim(t)}><Ikon n="wa" s={16} />{t.status === 'belum' ? 'Kirim lewat WhatsApp' : 'Kirim ulang'}</button>}</td>
-              </tr>
-            ))}</tbody>
-          </table></div>
+          <Ringkasan items={['belum', 'menunggu', 'benar', 'berbeda'].map((s) => ({ label: LABEL[s][0], nilai: hitung(s), ket: 'toko', ikon: s === 'benar' ? 'cek' : s === 'berbeda' ? 'awas' : 'wa', warna: s === 'berbeda' ? 'amber' : '' }))} />
+          <div className="directory-toolbar"><TabPilihan label="Status konfirmasi" nilai={status} onUbah={setStatus} pilihan={[["semua", 'Semua'], ['belum', 'Belum dikirim'], ['menunggu', 'Menunggu'], ['berbeda', 'Berbeda'], ['benar', 'Sesuai']]} /><Cari value={cari} onChange={setCari} placeholder="Cari toko…" /></div>
+          <div className="confirmation-grid">{data.toko.filter((t) => (status === 'semua' || t.status === status) && t.nama.toLowerCase().includes(cari.toLowerCase())).map((t) => <article key={t.customer_id} className={`confirmation-card ${t.status}`}><header><span className="entity-icon"><Ikon n="toko" s={24} /></span><Chip jenis={LABEL[t.status][1]}>{LABEL[t.status][0]}</Chip></header><h3>{t.nama}</h3>{!t.no_wa && !data.is_demo && <p className="muted small">Nomor WhatsApp belum diisi</p>}<div className="confirmation-compare"><div><span>Catatan kurir</span><strong>{t.galon_tercatat}<small> galon</small></strong></div><Ikon n="ulang" s={20} /><div><span>Jawaban toko</span><strong>{t.galon_menurut_toko ?? '—'}<small>{t.galon_menurut_toko != null ? ' galon' : ''}</small></strong></div></div>{t.status === 'berbeda' && <p className="danger-t">Selisih {t.galon_menurut_toko - t.galon_tercatat > 0 ? '+' : '−'}{Math.abs(t.galon_menurut_toko - t.galon_tercatat)} galon</p>}<footer>{t.status === 'berbeda' ? <Link className="btn btn-block" to="/bos/radar">Lihat R8 di Radar<Ikon n="panah" s={17} /></Link> : t.status === 'benar' ? <span className="confirmed-label"><Ikon n="cek" s={18} />Catatan sudah sesuai</span> : t.galon_tercatat === 0 ? <span className="muted">Tidak ada antaran pada periode ini</span> : <button className="btn btn-block" onClick={() => kirim(t)}><Ikon n="wa" s={18} />{t.status === 'belum' ? 'Kirim lewat WhatsApp' : 'Kirim ulang'}</button>}</footer></article>)}</div>
+          {!data.toko.some((t) => (status === 'semua' || t.status === status) && t.nama.toLowerCase().includes(cari.toLowerCase())) && <Kosong ikon="wa" judul="Tidak ada toko pada pilihan ini">Ubah filter atau nama yang dicari.</Kosong>}
         </>
       )}
       {hasil && <Kirim hasil={hasil} onTutup={() => setHasil(null)} />}

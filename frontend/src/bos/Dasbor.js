@@ -4,6 +4,7 @@ import { api } from '../api';
 import { pct, rp, tglPanjang, tglPendek } from '../format';
 import Ikon from '../komponen/Ikon';
 import { ChipRisiko, KotakGalat, Memuat, useData } from '../komponen/umum';
+import { Panel, Ringkasan } from '../komponen/Ruang';
 import { Avatar, Halaman, warnaKurir } from './umumBos';
 
 const LABEL_KODE = { R1: 'rasio toko', R3: 'stok toko', R6: 'kurang setor', R7: 'selisih galon', R8: 'konfirmasi toko', R2: 'toko tanpa bukti' };
@@ -22,9 +23,9 @@ function KartuRingkasanAI() {
     }
   };
   return (
-    <div className="card">
+    <div className="card ai-card">
       <div className="row between">
-        <div className="row" style={{ '--gap': '8px' }}><Ikon n="bintang" s={18} /><b>Ringkasan AI hari ini</b></div>
+        <div className="row" style={{ '--gap': '8px' }}><span className="ai-icon"><Ikon n="bintang" s={20} /></span><div><b>Ringkasan AI hari ini</b><p className="small muted">Bantu pahami aktivitas depot Anda.</p></div></div>
         <button className="btn" onClick={buat} disabled={kirim}>{kirim ? 'Menyusun…' : hasil ? 'Buat ulang' : 'Buat ringkasan'}</button>
       </div>
       {hasil && <p style={{ marginTop: 8, maxWidth: '75ch' }} className={hasil.tersedia ? '' : 'muted small'}>{hasil.teks || hasil.pesan}</p>}
@@ -138,7 +139,6 @@ export default function Dasbor() {
   const d = data;
   const hi = d.hari_ini;
   const rincian = Object.entries(d.rincian_bocor).sort((a, b) => b[1] - a[1]);
-  const pengingat = d.pengingat.map((p) => (p.sisa_hari < 0 ? `${p.komponen} terlambat ${-p.sisa_hari} hari` : p.komponen === 'SLHS' ? `SLHS habis dalam ${p.sisa_hari} hari` : `${p.komponen} ${p.sisa_hari} hari lagi`));
   const kosong = d.kurir.length === 0;
 
   return (
@@ -153,33 +153,36 @@ export default function Dasbor() {
           </ol>
         </div>
       )}
-      <KartuRingkasanAI />
-      {d.persetujuan_menunggu > 0 && <div className="banner sky"><Ikon n="setuju" s={22} /><span className="grow">{d.persetujuan_menunggu} pengajuan kurir menunggu keputusanmu.</span><Link className="btn" to="/bos/persetujuan">Periksa</Link></div>}
-      {pengingat.length > 0 && <div className="banner warn"><Ikon n="alat" s={22} /><span className="grow"><b>Perawatan dan izin:</b> {pengingat.join(' · ')}</span><Link className="btn" to="/bos/perawatan">Lihat</Link></div>}
-      <div className="grid-2">
-        <div className="hero-tile utama"><div className="eyebrow">Tagihan kembali · 30 hari</div><div className="angka">{rp(d.tagihan_kembali)}</div>
-          <p>Uang yang diamankan aturan "toko tanpa bukti dihitung harga rumah". Tanpa AQUAIR, uang ini hilang tanpa terlihat.</p></div>
-        <div className="hero-tile"><div className="eyebrow">Perkiraan bocor · 30 hari</div><div className="angka" style={{ color: 'var(--danger-text)' }}>{rp(d.perkiraan_bocor)}</div>
-          <p>Uang yang mungkin masih hilang walau aturan harga sudah berjalan. Dua angka ini tidak dijumlahkan.</p>
-          {rincian.length > 0 && <div className="rinci muted">{rincian.map(([k, v]) => <span key={k}>{LABEL_KODE[k] || k} <b className="num">{rp(v)}</b></span>)}</div>}</div>
-      </div>
-      <section className="stack">
-        <div className="sec-head"><h3>Hari ini · {tglPanjang(hi.tanggal)}</h3><Link className="btn btn-ghost" to="/bos/rit">Lihat rit</Link></div>
-        <div className="grid-4">
-          <div className="card mini"><span className="ket">Galon terjual</span><span className="angka">{hi.total}</span><span className="ket">{hi.toko} toko · {hi.rumah} rumah</span></div>
-          <div className="card mini"><span className="ket">Uang seharusnya</span><span className="angka">{rp(hi.uang_seharusnya)}</span><span className="ket">disetor {rp(hi.uang_disetor)}{hi.rit_di_jalan ? ` · ${hi.rit_di_jalan} rit masih di jalan` : ''}</span></div>
-          <div className="card mini"><span className="ket">Tagihan kembali hari ini</span><span className="angka">{rp(hi.tagihan_kembali)}</span><span className="ket">bocor {rp(hi.perkiraan_bocor)}</span></div>
-          <div className="card mini"><span className="ket">Tanda baru</span><span className="angka">{hi.tanda_baru}</span><span className="ket">{hi.rit_belum_dicek} rit muatan belum dicek</span></div>
-        </div>
+      <section className="overview-masthead">
+        <div className="overview-intro"><span className="eyebrow">{tglPanjang(hi.tanggal)}</span><h2>Bagaimana depot<br />Anda hari ini?</h2><p>{hi.rit_di_jalan ? `${hi.rit_di_jalan} rit sedang berjalan. Pantau pengantaran dan tindak lanjuti yang perlu diperiksa.` : 'Semua catatan operasional Anda terhubung di sini.'}</p><Link className="btn btn-primary" to="/bos/rit">Pantau rit hari ini<Ikon n="panah" s={18} /></Link></div>
+        <div className="overview-finance"><div className="finance-heading"><span><Ikon n="perisai" s={20} />Tagihan kembali</span><small>30 hari</small></div><strong>{rp(d.tagihan_kembali)}</strong><p>Selisih harga yang ditagihkan kembali karena bukti toko belum sesuai.</p><div className="finance-secondary"><span>Perkiraan bocor<strong>{rp(d.perkiraan_bocor)}</strong></span><Link to="/bos/radar" aria-label="Periksa perkiraan bocor di Radar"><Ikon n="panah" s={22} /></Link></div><small>Keduanya berbeda dan tidak dijumlahkan.</small></div>
       </section>
-      {!kosong && (
-        <>
-          <section className="stack"><div className="sec-head"><h3>Kurir</h3><span className="small muted">30 hari terakhir</span></div>
-            <div className="grid-2">{d.kurir.map((k) => <KartuKurir key={k.kurir.id} k={k} />)}</div></section>
-          <section className="card stack"><div className="sec-head"><h3>Porsi toko per kurir · 30 hari</h3>{d.depot.is_demo && <span className="small muted">Simulasi data contoh</span>}</div>
-            <GrafikPorsi tren={d.tren} kurir={d.kurir} /></section>
-        </>
-      )}
+      <Ringkasan items={[
+        { label: 'Galon terjual hari ini', nilai: hi.total, ket: `${hi.toko} toko · ${hi.rumah} rumah`, ikon: 'galon' },
+        { label: 'Seharusnya disetor', nilai: rp(hi.uang_seharusnya), ket: `Disetor ${rp(hi.uang_disetor)}`, ikon: 'uang' },
+        { label: 'Tagihan hari ini', nilai: rp(hi.tagihan_kembali), ket: `Perkiraan bocor ${rp(hi.perkiraan_bocor)}`, ikon: 'perisai' },
+        { label: 'Tanda baru', nilai: hi.tanda_baru, ket: `${hi.rit_belum_dicek} muatan belum dicek`, ikon: 'radar', warna: hi.tanda_baru ? 'amber' : '' },
+      ]} />
+      <div className="dashboard-workspace">
+        <div className="dashboard-primary">
+          <Panel judul="Pola penjualan toko" ket="Porsi toko per kurir selama 30 hari" aksi={<Link to="/bos/radar" className="btn btn-ghost">Buka Radar<Ikon n="panah" s={16} /></Link>}>
+            {kosong ? <p className="muted">Grafik muncul setelah kurir mulai mencatat penjualan.</p> : <GrafikPorsi tren={d.tren} kurir={d.kurir} />}
+          </Panel>
+          <KartuRingkasanAI />
+          <Panel judul="Aktivitas kurir" ket="Bandingkan catatan dan risiko tiap kurir" aksi={<Link to="/bos/kurir" className="btn btn-ghost">Kelola tim</Link>}>
+            {kosong ? <Link className="btn btn-primary" to="/bos/kurir"><Ikon n="tambah" />Tambah kurir pertama</Link> : <div className="courier-performance-list">{d.kurir.map((k) => <KartuKurir key={k.kurir.id} k={k} />)}</div>}
+          </Panel>
+        </div>
+        <aside className="dashboard-secondary">
+          <Panel judul="Perlu perhatian" ket="Langkah berikutnya untuk depot Anda" className="attention-panel">
+            <Link to="/bos/persetujuan" className="attention-item"><span className="attention-icon"><Ikon n="setuju" /></span><div><b>{d.persetujuan_menunggu} pengajuan menunggu</b><p>Periksa harga toko dan koreksi kurir</p></div><Ikon n="kanan" s={16} /></Link>
+            <Link to="/bos/rit" className="attention-item"><span className="attention-icon"><Ikon n="rit" /></span><div><b>{hi.rit_belum_dicek} muatan belum dicek</b><p>Cocokkan galon sebelum pengantaran</p></div><Ikon n="kanan" s={16} /></Link>
+            {d.pengingat.map((p, i) => <Link key={`${p.komponen}-${i}`} to={p.komponen === 'SLHS' ? '/bos/kepatuhan' : '/bos/perawatan'} className={`attention-item ${p.sisa_hari < 0 ? 'urgent' : ''}`}><span className="attention-icon"><Ikon n={p.komponen === 'SLHS' ? 'perisai' : 'alat'} /></span><div><b>{p.komponen}</b><p>{p.sisa_hari < 0 ? `Terlambat ${-p.sisa_hari} hari` : `${p.sisa_hari} hari lagi`}</p></div><Ikon n="kanan" s={16} /></Link>)}
+          </Panel>
+          <Panel judul="Rincian perkiraan bocor" ket="30 hari terakhir"><div className="leak-breakdown">{rincian.length ? rincian.map(([k, v]) => <div key={k}><span>{LABEL_KODE[k] || k}</span><b>{rp(v)}</b><i style={{ '--porsi': `${d.perkiraan_bocor ? Math.min(100, v / d.perkiraan_bocor * 100) : 0}%` }} /></div>) : <p className="muted">Belum ada perkiraan kebocoran.</p>}</div></Panel>
+          <div className="quick-links"><span className="eyebrow">AKSES CEPAT</span><Link to="/bos/pelanggan"><Ikon n="orang" />Pelanggan<Ikon n="kanan" s={16} /></Link><Link to="/bos/qr"><Ikon n="qr" />Cetak stiker QR<Ikon n="kanan" s={16} /></Link><Link to="/bos/unduh"><Ikon n="unduh" />Unduh laporan<Ikon n="kanan" s={16} /></Link></div>
+        </aside>
+      </div>
     </Halaman>
   );
 }

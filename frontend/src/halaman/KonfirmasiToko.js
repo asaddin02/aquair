@@ -51,7 +51,7 @@ export default function KonfirmasiToko() {
   } else {
     isi = (
       <>
-        <div className="card" style={{ textAlign: 'center', padding: '22px 16px' }}>
+        <div className="confirmation-quantity">
           <p>Minggu {periodeTeks(data.periode_mulai, data.periode_selesai)} tercatat</p>
           <div className="num" style={{ font: '800 52px/1.1 var(--f-head)', letterSpacing: '-.02em', margin: '6px 0' }}>{data.galon_tercatat} galon</div>
           <p>diantar ke <b>{data.nama_toko}</b>.</p>
@@ -65,12 +65,12 @@ export default function KonfirmasiToko() {
   }
 
   return (
-    <div className="layar-kurir">
+    <div className="layar-kurir public-confirmation">
       <div className="k-top">
         <span className="logo" style={{ fontSize: 16 }}><Logo s={24} />{data?.nama_depot || 'AQUAIR'}</span>
         {data?.is_demo && <span className="chip warn" style={{ marginLeft: 'auto' }}>Data contoh</span>}
       </div>
-      <div className="k-body">
+      <div className="k-body"><div className="public-confirmation-intro"><span className="eyebrow">KONFIRMASI PENGANTARAN</span><h1>Cocokkan catatan<br />bersama kami.</h1><p>Jawaban Anda membantu menjaga catatan depot tetap akurat.</p></div>
         {isi}
         {data && <p className="small muted" style={{ marginTop: 'auto' }}>Tautan berlaku sampai {tglPanjang(data.berlaku_sampai)}. Tidak perlu akun. Jawaban hanya bisa dikirim sekali.</p>}
       </div>

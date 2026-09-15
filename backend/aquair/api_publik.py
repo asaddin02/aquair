@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import re
 from datetime import timedelta
 from typing import Literal
@@ -122,9 +123,30 @@ class MulaiDemo(BaseModel):
 
 
 def alamat_ip(request: Request) -> str:
-    """IP pengunjung untuk batas depot demo. Nilai terakhir X-Forwarded-For ditambahkan proxy, jadi tidak bisa dipalsukan pengunjung."""
-    diteruskan = request.headers.get("x-forwarded-for", "")
-    return diteruskan.split(",")[-1].strip() if diteruskan else (request.client.host if request.client else "tidak-diketahui")
+    """IP pengunjung untuk batas depot demo, diatur lewat lingkungan tanpa mengubah kode.
+
+    - AQUAIR_HEADER_IP: header dari proxy tepercaya yang berisi IP asli pengunjung (misalnya cf-connecting-ip).
+    - AQUAIR_PROXY_TEPERCAYA: jumlah proxy yang menambahkan nilai ke X-Forwarded-For (bawaan 1 = nilai terakhir).
+    Nilai yang ditambahkan proxy tepercaya tidak bisa dipalsukan pengunjung. Cek hasilnya di /api/demo/ip-saya.
+    """
+    header = os.environ.get("AQUAIR_HEADER_IP", "").strip().lower()
+    if header and request.headers.get(header):
+        return request.headers[header].split(",")[0].strip()
+    rantai = [x.strip() for x in request.headers.get("x-forwarded-for", "").split(",") if x.strip()]
+    if rantai:
+        try:
+            lompat = max(1, int(os.environ.get("AQUAIR_PROXY_TEPERCAYA", "1")))
+        except ValueError:
+            lompat = 1
+        return rantai[-min(lompat, len(rantai))]
+    return request.client.host if request.client else "tidak-diketahui"
+
+
+@router.get("/demo/ip-saya")
+async def ip_saya(request: Request):
+    """Diagnosis sesudah deploy: buka dari dua jaringan berbeda; `ip_dipakai` harus berbeda dan sama dengan IP publik perangkat."""
+    return {"ip_dipakai": alamat_ip(request),
+            **{k.replace("-", "_"): request.headers.get(k) for k in ("x-forwarded-for", "x-real-ip", "cf-connecting-ip", "true-client-ip")}}
 
 
 @router.post("/demo/mulai")
@@ -147,6 +169,21 @@ async def mulai_demo(b: MulaiDemo, request: Request):
     hasil = await buat_depot_demo()
     return {"depot_id": hasil["depot"]["_id"], "nama_depot": hasil["depot"]["nama"], "baru": True,
             "token_bos": await buat_token(hasil["bos"]), "token_kurir": await buat_token(hasil["kurir"])}
+
+
+class MasukDemo(MulaiDemo):
+    username: str = Field(max_length=120)
+    sandi: str = Field(max_length=128)
+
+
+@router.post("/demo/masuk")
+async def masuk_demo(b: MasukDemo, request: Request):
+    """Login akun contoh; setiap browser tetap mendapat depot contoh sendiri."""
+    username = b.username.strip().lower()
+    if username not in ("admin", "kurir") or b.sandi != username:
+        galat(401, "Username atau kata sandi demo salah. Gunakan admin / admin atau kurir / kurir.")
+    hasil = await mulai_demo(MulaiDemo(depot_id=b.depot_id), request)
+    return {**hasil, "peran": "bos" if username == "admin" else "kurir"}
 
 
 # ---------------------------------------------------------------- konfirmasi pemilik toko (Tahap 2)

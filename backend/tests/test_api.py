@@ -204,6 +204,74 @@ async def test_alur_demo_juri(klien):
     assert lagi["depot_id"] == demo["depot_id"] and lagi["baru"] is False
 
 
+async def test_login_juri_dan_ganti_peran_memakai_depot_yang_sama(klien):
+    headers = {"X-Forwarded-For": "uji-login-juri"}
+    admin = await klien.post("/api/demo/masuk", headers=headers, json={"username": "admin", "sandi": "admin"})
+    assert admin.status_code == 200
+    demo = admin.json()
+    assert demo["peran"] == "bos" and demo["baru"] is True
+    bos = (await klien.get("/api/auth/saya", headers=h(demo["token_bos"]))).json()
+    assert bos["peran"] == "bos" and bos["depot"]["is_demo"] is True
+    kurir = await klien.post("/api/demo/masuk", headers=headers,
+                            json={"username": "kurir", "sandi": "kurir", "depot_id": demo["depot_id"]})
+    assert kurir.status_code == 200
+    assert kurir.json()["peran"] == "kurir" and kurir.json()["baru"] is False
+    assert kurir.json()["depot_id"] == demo["depot_id"]
+    token = kurir.json()["token_kurir"]
+    profil = (await klien.get("/api/auth/saya", headers=h(token))).json()
+    assert profil["peran"] == "kurir" and profil["pengguna"]["nama"] == "Rudi"
+    assert (await klien.get("/api/bos/dasbor", headers=h(token))).status_code == 403
+    assert await db().demo_requests.count_documents({"ip": "uji-login-juri"}) == 1
+
+
+@pytest.mark.parametrize("username,sandi", [("admin", "kurir"), ("kurir", "admin"), ("tidak-ada", "tidak-ada"), ("", "")])
+async def test_login_juri_salah_tidak_membuat_depot(klien, username, sandi):
+    jumlah = await db().depots.count_documents({})
+    r = await klien.post("/api/demo/masuk", json={"username": username, "sandi": sandi})
+    assert r.status_code == 401
+    assert "token_bos" not in r.json() and "token_kurir" not in r.json()
+    assert await db().depots.count_documents({}) == jumlah
+
+
+async def test_login_juri_terpisah_dan_tidak_bisa_masuk_depot_sungguhan(klien, dua_depot):
+    a, _ = dua_depot
+    asli = (await klien.get("/api/auth/saya", headers=h(a["bos"]))).json()["depot"]["id"]
+    pertama = await klien.post("/api/demo/masuk", headers={"X-Forwarded-For": "uji-juri-satu"},
+                              json={"username": "admin", "sandi": "admin", "depot_id": asli})
+    kedua = await klien.post("/api/demo/masuk", headers={"X-Forwarded-For": "uji-juri-dua"},
+                            json={"username": "admin", "sandi": "admin"})
+    assert pertama.status_code == kedua.status_code == 200
+    d1, d2 = pertama.json(), kedua.json()
+    assert len({asli, d1["depot_id"], d2["depot_id"]}) == 3
+    rit_asli = (await klien.get("/api/bos/rit", headers=h(a["bos"]))).json()["rit"][0]["id"]
+    for demo in (d1, d2):
+        profil = (await klien.get("/api/auth/saya", headers=h(demo["token_bos"]))).json()
+        assert profil["depot"]["is_demo"] is True
+        assert (await klien.get(f"/api/bos/rit/{rit_asli}", headers=h(demo["token_bos"]))).status_code == 404
+
+
+async def test_login_juri_mematuhi_batas_depot_demo(klien):
+    from aquair.inti import sekarang
+
+    ip = "uji-batas-login-juri"
+    await db().demo_requests.insert_many([{"ip": ip, "created_at": sekarang()} for _ in range(10)])
+    jumlah = await db().depots.count_documents({})
+    r = await klien.post("/api/demo/masuk", headers={"X-Forwarded-For": ip}, json={"username": "admin", "sandi": "admin"})
+    assert r.status_code == 429
+    assert await db().depots.count_documents({}) == jumlah
+
+
+async def test_alamat_ip_bisa_diatur_lewat_lingkungan(klien, monkeypatch):
+    rantai = {"X-Forwarded-For": "palsu-dari-pengunjung, ip-pengunjung, ip-cdn"}
+    assert (await klien.get("/api/demo/ip-saya", headers=rantai)).json()["ip_dipakai"] == "ip-cdn"
+    monkeypatch.setenv("AQUAIR_PROXY_TEPERCAYA", "2")
+    assert (await klien.get("/api/demo/ip-saya", headers=rantai)).json()["ip_dipakai"] == "ip-pengunjung"
+    monkeypatch.setenv("AQUAIR_HEADER_IP", "cf-connecting-ip")
+    hasil = (await klien.get("/api/demo/ip-saya", headers={**rantai, "CF-Connecting-IP": "ip-asli"})).json()
+    assert hasil["ip_dipakai"] == "ip-asli" and hasil["cf_connecting_ip"] == "ip-asli"
+    assert (await klien.get("/api/demo/ip-saya", headers=rantai)).json()["ip_dipakai"] == "ip-pengunjung"
+
+
 async def test_konfirmasi_pemilik_toko_memunculkan_r8(klien):
     demo = (await klien.post("/api/demo/mulai", json={})).json()
     bos = demo["token_bos"]

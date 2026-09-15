@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { api } from '../api';
 import Ikon from '../komponen/Ikon';
 import { Chip, KotakGalat, Memuat, Modal, useData, useToast } from '../komponen/umum';
+import { Cari, Catatan, Kosong, Ringkasan, TabPilihan } from '../komponen/Ruang';
 import { Halaman } from './umumBos';
 
 function KoreksiSaldo({ p, onTutup, onSimpan }) {
@@ -35,42 +36,23 @@ function KoreksiSaldo({ p, onTutup, onSimpan }) {
 export default function Galon() {
   const toast = useToast();
   const [koreksi, setKoreksi] = useState(null);
+  const [cari, setCari] = useState('');
+  const [tab, setTab] = useState('perhatian');
   const [lebih, setLebih] = useState(false);
   const { data, galat, memuat, muatUlang } = useData(() => api('/bos/galon'), []);
-  const baris = (p, lama) => (
-    <tr key={p.id}>
-      <td><b>{p.nama}</b></td>
-      <td>{p.jenis === 'toko' ? <Chip jenis="brand">Toko</Chip> : <Chip jenis="sky">Rumah</Chip>}</td>
-      <td className="r num"><b>{p.saldo_galon}</b> galon</td>
-      {lama && <td className="r"><Chip jenis="warn" ikon="awas">{p.pernah_kembali ? `${p.hari_tanpa_kosong} hari lalu` : `belum pernah (${p.hari_tanpa_kosong} hari)`}</Chip></td>}
-      <td className="r"><button className="btn btn-ghost" onClick={() => setKoreksi(p)}>Koreksi saldo</button></td>
-    </tr>
-  );
-  const tampil = data ? (lebih ? data.pelanggan : data.pelanggan.slice(0, 15)) : [];
+  const daftar = (data ? tab === 'perhatian' ? data.tidak_kembali : data.pelanggan : []).filter((p) => p.nama.toLowerCase().includes(cari.toLowerCase()));
+  const tampil = lebih ? daftar : daftar.slice(0, 15);
   return (
     <Halaman judul="Galon di luar">
       <KotakGalat galat={galat} onUlang={muatUlang} />
-      {memuat && !data ? <Memuat /> : (
-        <>
-          <div className="grid-2">
-            <div className="hero-tile"><div className="eyebrow">Galon depot di pelanggan</div><div className="angka">{data.total} galon</div>
-              <p>di {data.pelanggan.length} pelanggan. Setiap penjualan menambah saldo sebanyak galon isi diserahkan dikurangi galon kosong diambil.</p></div>
-            <div className="hero-tile"><div className="eyebrow">Tidak ada galon kosong kembali &gt; 14 hari</div>
-              <div className="angka" style={{ color: 'var(--warn-text)' }}>{data.total_tidak_kembali} galon</div>
-              <p>di {data.tidak_kembali.length} pelanggan. Minta kurir menanyakannya di rit berikutnya sebelum galonnya hilang.</p></div>
-          </div>
-          <section className="stack"><div className="sec-head"><h3>Perlu ditanyakan</h3></div>
-            {data.tidak_kembali.length === 0 ? <div className="card"><Ikon n="cek" s={18} /> Semua pelanggan mengembalikan galon kosong dalam 14 hari terakhir.</div> : (
-              <div className="table-wrap"><table><thead><tr><th>Pelanggan</th><th>Jenis</th><th className="r">Saldo</th><th className="r">Galon kosong terakhir kembali</th><th /></tr></thead>
-                <tbody>{data.tidak_kembali.map((p) => baris(p, true))}</tbody></table></div>
-            )}</section>
-          <section className="stack"><div className="sec-head"><h3>Semua pelanggan</h3><span className="small muted">saldo terbesar dulu</span></div>
-            <div className="table-wrap"><table><thead><tr><th>Pelanggan</th><th>Jenis</th><th className="r">Saldo</th><th /></tr></thead>
-              <tbody>{tampil.map((p) => baris(p, false))}</tbody></table></div>
-            {data.pelanggan.length > tampil.length && <button className="btn btn-block" onClick={() => setLebih(true)}>Tampilkan {data.pelanggan.length - tampil.length} pelanggan lagi</button>}
-          </section>
-        </>
-      )}
+      {memuat && !data ? <Memuat /> : data && <>
+        <Ringkasan items={[{ label: 'Galon di pelanggan', nilai: data.total, ket: `${data.pelanggan.length} pelanggan`, ikon: 'galon' }, { label: 'Belum kembali > 14 hari', nilai: data.total_tidak_kembali, ket: `${data.tidak_kembali.length} pelanggan perlu ditanya`, ikon: 'ulang', warna: 'amber' }]} />
+        <div className="work-split"><div className="work-primary"><div className="directory-toolbar"><TabPilihan label="Daftar galon" nilai={tab} onUbah={(v) => { setTab(v); setLebih(false); }} pilihan={[["perhatian", 'Perlu ditanyakan', data.tidak_kembali.length], ['semua', 'Semua pelanggan', data.pelanggan.length]]} /><Cari value={cari} onChange={(v) => { setCari(v); setLebih(false); }} placeholder="Cari peminjam galon…" /></div>
+          <div className="loan-list">{tampil.map((p) => <article key={p.id} className="loan-row"><span className="entity-icon"><Ikon n={p.jenis === 'toko' ? 'toko' : 'rumah'} s={25} /></span><div className="loan-person"><h3>{p.nama}</h3><Chip jenis={p.jenis === 'toko' ? 'brand' : 'sky'}>{p.jenis === 'toko' ? 'Toko' : 'Rumah'}</Chip>{tab === 'perhatian' && <span className="loan-age">{p.pernah_kembali ? `Terakhir kembali ${p.hari_tanpa_kosong} hari lalu` : `Belum pernah kembali · ${p.hari_tanpa_kosong} hari`}</span>}</div><div className="loan-count"><strong>{p.saldo_galon}</strong><span>galon pinjaman</span></div><button className="btn" onClick={() => setKoreksi(p)}>Koreksi saldo</button></article>)}</div>
+          {!tampil.length && <Kosong ikon="galon" judul="Tidak ada galon pada pilihan ini">Coba tab Semua pelanggan atau ubah pencarian.</Kosong>}
+          {daftar.length > tampil.length && <button className="btn btn-block" onClick={() => setLebih(true)}>Tampilkan {daftar.length - tampil.length} pelanggan lagi</button>}
+        </div><div className="work-aside"><Catatan ikon="galon" judul="Jangan biarkan galon terlupa">Tanyakan galon yang belum kembali lebih dari 14 hari pada pengantaran berikutnya.</Catatan><div className="balance-formula"><span>Galon isi diserahkan</span><b>−</b><span>Galon kosong diambil</span><hr /><strong>Perubahan saldo pinjaman</strong><p>Koreksi manual membutuhkan alasan agar riwayatnya tetap jelas.</p></div></div></div>
+      </>}
       {koreksi && <KoreksiSaldo p={koreksi} onTutup={() => setKoreksi(null)} onSimpan={async (pesan) => { setKoreksi(null); await muatUlang({ diam: true }); toast(pesan); }} />}
     </Halaman>
   );

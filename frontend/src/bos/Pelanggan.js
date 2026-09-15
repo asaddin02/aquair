@@ -3,6 +3,7 @@ import { api } from '../api';
 import Ikon from '../komponen/Ikon';
 import { Chip, KotakGalat, Memuat, Modal, Toggle, useData, useToast } from '../komponen/umum';
 import { useSesi } from '../Sesi';
+import { Cari, Kosong, Panel, Ringkasan, TabPilihan } from '../komponen/Ruang';
 import { Halaman } from './umumBos';
 
 const kosong = { nama: '', jenis: 'toko', no_wa: '', lat: null, lng: null, kapasitas: 10, laku_per_hari: 2, boleh_bon: false };
@@ -79,10 +80,12 @@ function FormPelanggan({ awal, onTutup, onSimpan }) {
 export default function Pelanggan() {
   const toast = useToast();
   const [filter, setFilter] = useState('semua');
+  const [cari, setCari] = useState('');
+  const [tampilan, setTampilan] = useState('kartu');
   const [form, setForm] = useState(null);
   const [lebih, setLebih] = useState(false);
   const { data, galat, memuat, muatUlang, setData } = useData(() => api('/bos/pelanggan'), []);
-  const semua = (data || []).filter((p) => filter === 'semua' || p.jenis === filter);
+  const semua = (data || []).filter((p) => (filter === 'semua' || p.jenis === filter) && p.nama.toLowerCase().includes(cari.toLowerCase()));
   const tampil = lebih ? semua : semua.slice(0, 30);
   const jumlah = (j) => (data || []).filter((p) => p.jenis === j).length;
 
@@ -99,12 +102,17 @@ export default function Pelanggan() {
 
   return (
     <Halaman judul="Pelanggan" kanan={<button className="btn btn-primary" onClick={() => setForm({})}><Ikon n="tambah" s={18} />Tambah pelanggan</button>}>
-      <span className="seg" role="group" aria-label="Jenis pelanggan" style={{ alignSelf: 'start' }}>
-        {[['semua', `Semua ${data?.length ?? ''}`], ['toko', `Toko ${jumlah('toko')}`], ['rumah', `Rumah ${jumlah('rumah')}`]].map(([v, l]) =>
-          <button key={v} aria-pressed={filter === v} onClick={() => { setFilter(v); setLebih(false); }}>{l}</button>)}
-      </span>
+      <Ringkasan items={[{ label: 'Semua pelanggan', nilai: data?.length, ikon: 'orang' }, { label: 'Toko terdaftar', nilai: jumlah('toko'), ikon: 'toko' }, { label: 'Pembeli rumah', nilai: jumlah('rumah'), ikon: 'rumah' }, { label: 'Toko tanpa lokasi', nilai: (data || []).filter((p) => p.jenis === 'toko' && p.lat == null).length, ikon: 'lokasi', warna: 'amber' }]} />
+      <div className="directory-toolbar"><TabPilihan label="Jenis pelanggan" nilai={filter} onUbah={(v) => { setFilter(v); setLebih(false); }} pilihan={[["semua", 'Semua', data?.length], ['toko', 'Toko', jumlah('toko')], ['rumah', 'Rumah', jumlah('rumah')]]} /><Cari value={cari} onChange={(v) => { setCari(v); setLebih(false); }} placeholder="Cari nama pelanggan…" /></div>
+      <Panel judul="Direktori pelanggan" ket={`${semua.length} pelanggan sesuai pilihan Anda`} aksi={<TabPilihan label="Tampilan pelanggan" nilai={tampilan} onUbah={setTampilan} pilihan={[["kartu", 'Kartu'], ['tabel', 'Tabel']]} />}>
       <KotakGalat galat={galat} onUlang={muatUlang} />
-      {memuat && !data ? <Memuat /> : (
+      {memuat && !data ? <Memuat /> : !tampil.length ? <Kosong judul="Pelanggan tidak ditemukan">Coba nama lain atau tambahkan pelanggan baru.</Kosong> : tampilan === 'kartu' ? <div className="customer-grid">{tampil.map((p) => <article className="customer-card" key={p.id}>
+        <header><span className={`entity-icon ${p.jenis}`}><Ikon n={p.jenis === 'toko' ? 'toko' : 'rumah'} s={25} /></span><Chip jenis={p.jenis === 'toko' ? 'brand' : 'sky'}>{p.jenis === 'toko' ? 'Toko' : 'Rumah'}</Chip></header>
+        <h3>{p.nama}</h3><span className="customer-location"><Ikon n="lokasi" s={15} />{p.lat != null ? 'Lokasi sudah terdaftar' : 'Lokasi belum diisi'}</span>
+        {p.status === 'menunggu_persetujuan' && <Chip jenis="warn">Menunggu persetujuan</Chip>}
+        <dl><div><dt>Galon pinjaman</dt><dd>{p.saldo_galon ?? 0}<small> galon</small></dd></div>{p.jenis === 'toko' && <><div><dt>Kapasitas</dt><dd>{p.kapasitas ?? '—'}<small> galon</small></dd></div><div><dt>Laku / hari</dt><dd>{p.laku_per_hari ?? '—'}</dd></div></>}</dl>
+        <footer><label><Toggle nyala={p.boleh_bon} label={`Boleh bon: ${p.nama}`} onUbah={(v) => ubahBon(p, v)} /><span>Boleh bon</span></label><button className="btn btn-ghost" onClick={() => setForm(p)}>Ubah<Ikon n="kanan" s={16} /></button></footer>
+      </article>)}</div> : (
         <div className="table-wrap"><table>
           <thead><tr><th>Nama</th><th>Jenis</th><th className="r">Kapasitas simpan</th><th className="r">Laku per hari</th><th>Titik lokasi</th><th className="r">Saldo galon</th><th>Boleh bon</th><th /></tr></thead>
           <tbody>{tampil.map((p) => (
@@ -122,6 +130,7 @@ export default function Pelanggan() {
         </table></div>
       )}
       {semua.length > tampil.length && <button className="btn btn-block" onClick={() => setLebih(true)}>Tampilkan {semua.length - tampil.length} pelanggan lagi</button>}
+      </Panel>
       <p className="small muted">Kapasitas dan laku per hari dipakai aturan R3 (stok toko tidak wajar). Bon mati secara bawaan, supaya penjualan tunai tidak bisa ditulis sebagai bon.</p>
       {form && <FormPelanggan awal={form.id ? form : null} onTutup={() => setForm(null)} onSimpan={async (pesan) => { setForm(null); await muatUlang({ diam: true }); toast(pesan); }} />}
     </Halaman>

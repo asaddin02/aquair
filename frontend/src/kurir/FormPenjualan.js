@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { idUnik } from '../api';
 import Ikon from '../komponen/Ikon';
+import { LangkahForm } from '../komponen/Ruang';
 import { KotakGalat, Stepper, useToast } from '../komponen/umum';
 import { useSesi } from '../Sesi';
 import { simpanPenjualan, tambahKeAntrean } from './antrean';
@@ -48,15 +49,18 @@ export default function FormPenjualan({ bodyDasar, namaPelanggan, bolehBon, alas
 
   return (
     <>
+      <LangkahForm nomor="1" judul="Galon yang diantar" ket="Hitung isi yang diserahkan dan kosong yang diambil.">
       <Stepper label="Galon isi diserahkan" nilai={isi} min={1} max={200} onUbah={(v) => { setIsi(v); if (!kosongDiubah) setKosong(v); }} />
       <Stepper label="Galon kosong diambil" nilai={kosong} min={0} max={200} onUbah={(v) => { setKosong(v); setKosongDiubah(true); }} />
-      <div className="field"><span>Bayar</span>
+      <div className="loan-impact"><Ikon n="galon" s={20} /><span>{isi === kosong ? 'Galon isi dan kosong seimbang.' : isi > kosong ? `Pinjaman pelanggan bertambah ${isi - kosong} galon.` : `Pinjaman pelanggan berkurang ${kosong - isi} galon.`}</span></div></LangkahForm>
+      <LangkahForm nomor="2" judul="Cara pembayaran" ket="Pilih sesuai pembayaran pelanggan."><div className="field"><span className="sr">Bayar</span>
         <div className="grid-2" style={{ gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          <button type="button" className="choice" style={{ gridTemplateColumns: '1fr' }} aria-pressed={bayar === 'tunai'} onClick={() => setBayar('tunai')}><b>Tunai</b></button>
-          <button type="button" className="choice" style={{ gridTemplateColumns: '1fr' }} aria-pressed={bayar === 'bon'} onClick={() => setBayar('bon')} disabled={!bolehBon}><b>Bon</b></button>
+          <button type="button" className="choice" style={{ gridTemplateColumns: '1fr' }} aria-pressed={bayar === 'tunai'} onClick={() => setBayar('tunai')}><Ikon n="uang" s={23} /><b>Tunai</b><small>Dibayar sekarang</small></button>
+          <button type="button" className="choice" style={{ gridTemplateColumns: '1fr' }} aria-pressed={bayar === 'bon'} onClick={() => setBayar('bon')} disabled={!bolehBon}><Ikon n="rit" s={23} /><b>Bon</b><small>Dibayar kemudian</small></button>
         </div>
         {!bolehBon && <span className="hint">{alasanBon || 'Bon belum diizinkan bos untuk pelanggan ini.'}</span>}
       </div>
+      </LangkahForm><section className="sale-review"><div><span>Ringkasan penjualan</span><b>{namaPelanggan}</b></div><p><strong>{isi} galon isi</strong><span>{kosong} kosong diambil · {bayar}</span></p></section>
       {galat?.jaringan ? (
         <div className="banner danger" role="alert"><Ikon n="sinyal" s={22} />
           <div className="stack" style={{ '--gap': '8px' }}><b>Belum tersimpan — tidak ada sinyal</b>

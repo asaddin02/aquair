@@ -1,4 +1,5 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { useEffect } from 'react';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import BosApp from './bos/BosApp';
 import Daftar from './halaman/Daftar';
 import KonfirmasiToko from './halaman/KonfirmasiToko';
@@ -15,9 +16,21 @@ function Penjaga({ peran, children }) {
   return children;
 }
 
+function NavigasiHalaman() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    if (!pathname.startsWith('/bos')) {
+      document.title = `${pathname.startsWith('/kurir') ? 'Ruang kurir' : pathname === '/masuk' ? 'Masuk' : pathname === '/daftar' ? 'Daftarkan depot' : 'Air mengalir. Usaha terkendali.'} · AQUAIR`;
+    }
+  }, [pathname]);
+  return null;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
+      <NavigasiHalaman />
       <SesiProvider>
         <ToastProvider>
           <Routes>

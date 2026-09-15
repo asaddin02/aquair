@@ -6,6 +6,7 @@ import { api } from '../api';
 import { hariIniWib, jam, jarakTeks, rp, tglPanjang } from '../format';
 import Ikon from '../komponen/Ikon';
 import { Chip, ChipStatus, KotakGalat, Memuat, Modal, useData, useToast } from '../komponen/umum';
+import { Kosong, Ringkasan } from '../komponen/Ruang';
 import { Avatar, GrupRadar, Halaman } from './umumBos';
 
 const WARNA_STATUS = { terverifikasi: '#15803D', rumah: '#0284C7', lokasi_jauh: '#D97706', tanpa_qr: '#D97706', lokasi_lemah: '#D97706' };
@@ -34,18 +35,12 @@ export function DaftarRit() {
       <label className="row" htmlFor="tanggal-rit" style={{ '--gap': '8px' }}><span className="small">Tanggal</span>
         <input id="tanggal-rit" type="date" className="input" style={{ minHeight: 40 }} value={tanggal} max={hariIniWib()}
           onChange={(e) => setCari(e.target.value ? { tanggal: e.target.value } : {})} /></label>}>
-      <p className="muted">{tglPanjang(tanggal)}</p>
+      <Ringkasan items={[{ label: 'Rit hari ini', nilai: data?.rit.length, ket: tglPanjang(tanggal), ikon: 'rit' }, { label: 'Sedang di jalan', nilai: data?.rit.filter((r) => r.status === 'aktif').length, ikon: 'lokasi' }, { label: 'Menunggu penerimaan', nilai: data?.rit.filter((r) => r.status === 'selesai').length, ikon: 'uang', warna: 'amber' }]} />
+      <div className="section-label"><h2>Perjalanan pengantaran</h2><span>Pilih rit untuk memeriksa muatan, penjualan, dan setoran.</span></div>
       <KotakGalat galat={galat} onUlang={muatUlang} />
-      {memuat && !data ? <Memuat /> : data?.rit.length === 0 ? <div className="card">Tidak ada rit pada tanggal ini.</div> : (
-        <div className="grid-2">
-          {data?.rit.map((r) => (
-            <Link key={r.id} to={`/bos/rit/${r.id}`} className="card stack" style={{ '--gap': '8px', textDecoration: 'none', color: 'inherit' }}>
-              <div className="row between"><Avatar kurir={r.kurir} /><b className="grow">{r.kurir.nama}</b><ChipRit rit={r} /></div>
-              <span className="small muted">Berangkat {r.jam_berangkat} · muatan {r.dibawa} galon {r.muatan_dicek ? `(dicek ${r.jam_dicek})` : ''}</span>
-              {!r.muatan_dicek && <Chip jenis="warn" ikon="awas" style={{ justifySelf: 'start', alignSelf: 'start' }}>Muatan belum dicek</Chip>}
-              <span className="num"><b>{r.setoran.galon_catatan}</b> galon tercatat · seharusnya <b>{rp(r.setoran.uang_seharusnya)}</b>{r.status !== 'aktif' && <> · disetor <b>{rp(r.uang_disetor)}</b></>}</span>
-            </Link>
-          ))}
+      {memuat && !data ? <Memuat /> : data?.rit.length === 0 ? <Kosong ikon="rit" judul="Belum ada perjalanan">Rit yang dimulai kurir pada tanggal ini akan tampil di sini.</Kosong> : (
+        <div className="trip-list">
+          {data?.rit.map((r, i) => <Link key={r.id} to={`/bos/rit/${r.id}`} className="trip-card"><div className="trip-index">{String(i + 1).padStart(2, '0')}</div><div className="trip-driver"><Avatar kurir={r.kurir} /><div><h3>{r.kurir.nama}</h3><span>Berangkat {r.jam_berangkat}</span></div></div><div className="trip-load"><span>Muatan awal</span><b>{r.dibawa} galon</b><small>{r.muatan_dicek ? `Dicek ${r.jam_dicek}` : 'Belum dicek bos'}</small></div><div className="trip-progress"><span>{r.setoran.galon_catatan} galon tercatat</span><div className="meter"><i style={{ width: `${r.dibawa ? Math.min(100, r.setoran.galon_catatan / r.dibawa * 100) : 0}%` }} /></div><ChipRit rit={r} /></div><div className="trip-money"><span>Seharusnya disetor</span><b>{rp(r.setoran.uang_seharusnya)}</b>{r.status !== 'aktif' && <small>Disetor {rp(r.uang_disetor)}</small>}</div><span className="trip-arrow"><Ikon n="panah" /></span></Link>)}
         </div>
       )}
     </Halaman>
@@ -60,7 +55,7 @@ function PetaRit({ penjualan, titikToko }) {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(peta);
     const batas = [];
     titikToko.forEach((t) => {
-      L.circleMarker([t.lat, t.lng], { radius: 6, color: '#0F766E', weight: 2, fillColor: '#FFFFFF', fillOpacity: 1 }).bindTooltip(t.nama).addTo(peta);
+      L.circleMarker([t.lat, t.lng], { radius: 6, color: '#2563EB', weight: 2, fillColor: '#FFFFFF', fillOpacity: 1 }).bindTooltip(t.nama).addTo(peta);
       batas.push([t.lat, t.lng]);
     });
     const titik = penjualan.filter((x) => x.lat != null);
@@ -142,6 +137,8 @@ export function DetailRit() {
   return (
     <Halaman judul={`Rit ${rit.kurir.nama} · ${tglPanjang(rit.tanggal)}`} kanan={<Link className="btn btn-ghost" to={`/bos/rit?tanggal=${rit.tanggal}`}><Ikon n="kiri" s={18} />Semua rit</Link>}>
       <div className="row"><ChipRit rit={rit} /><span className="small muted">Berangkat {rit.jam_berangkat} · muatan {rit.dibawa} galon{rit.muatan_dicek ? ` · dicek ${rit.jam_dicek}` : ''}</span></div>
+      <Ringkasan items={[{ label: 'Muatan berangkat', nilai: `${rit.dibawa} galon`, ikon: 'galon' }, { label: 'Penjualan tercatat', nilai: `${st.galon_catatan} galon`, ikon: 'rit' }, { label: 'Seharusnya disetor', nilai: rp(st.uang_seharusnya), ikon: 'uang' }]} />
+      <nav className="section-nav no-print" aria-label="Bagian detail rit"><a href="#rit-penjualan">Penjualan</a><a href="#rit-setoran">Setoran</a><a href="#rit-peta">Peta pengantaran</a></nav>
       <KotakGalat galat={galatAksi} />
       {!rit.muatan_dicek && (
         <div className="banner warn" role="status"><Ikon n="awas" s={22} />
@@ -152,7 +149,7 @@ export function DetailRit() {
           </span>
         </div>
       )}
-      <section className="stack">
+      <section id="rit-penjualan" className="stack">
         <div className="sec-head"><h3>Penjualan</h3><span className="small muted">{penjualan.length} catatan</span></div>
         <div className="table-wrap"><table>
           <thead><tr><th>#</th><th>Jam</th><th>Pelanggan</th><th>Jenis</th><th className="r">Galon</th><th>Status</th><th className="r">Jarak ke titik</th><th className="r">Harga</th><th className="r">Total</th></tr></thead>
@@ -165,7 +162,7 @@ export function DetailRit() {
           ))}</tbody>
         </table></div>
       </section>
-      <section className="card stack"><h3>Setoran</h3>
+      <section id="rit-setoran" className="card stack"><h3>Setoran</h3>
         {rit.status === 'aktif' ? <p className="muted">Rit masih berjalan. Hitungan setoran muncul setelah kurir menekan Selesai rit. Uang seharusnya sejauh ini {rp(st.uang_seharusnya)}.</p> : (
           <>
             <div className="table-wrap"><table><tbody>
@@ -183,7 +180,7 @@ export function DetailRit() {
         )}
       </section>
       {tanda && <section className="stack"><div className="sec-head"><h3>Tanda Radar hari itu</h3></div><GrupRadar grup={tanda} onBerubah={() => muatUlang({ diam: true })} /></section>}
-      <section className="card stack"><div className="sec-head"><h3>Peta rit</h3><span className="small muted">Titik penjualan berurutan</span></div>
+      <section id="rit-peta" className="card stack"><div className="sec-head"><h3>Peta rit</h3><span className="small muted">Titik penjualan berurutan</span></div>
         <PetaRit penjualan={penjualan} titikToko={titikToko} /></section>
       {betulkan && <BetulkanMuatan rit={rit} onTutup={() => setBetulkan(false)} onSimpan={async (p) => { setBetulkan(false); await muatUlang({ diam: true }); toast(p); }} />}
     </Halaman>

@@ -44,11 +44,12 @@ export default function MulaiRit() {
     <>
       <KTop judul="Mulai rit" />
       <div className="k-body">
-        <p>Hitung galon isi di motor, lalu mulai rit.</p>
+        <div className="mobile-intro trip-intro"><span className="start-trip-icon"><Ikon n="rit" s={38} /></span><span className="eyebrow">AWAL PERJALANAN</span><h2>Siapkan muatan.<br />Siap mengantar.</h2><p>Hitung galon isi yang benar-benar ada di motor.</p></div>
         <Stepper label="Galon isi yang dibawa" nilai={dibawa} min={1} max={500} onUbah={setDibawa} />
+<div className="load-presets" role="group" aria-label="Pilihan muatan cepat">{[20, 30, 40, 50].map((n) => <button key={n} aria-pressed={dibawa === n} onClick={() => setDibawa(n)}>{n} galon</button>)}</div>
         <KotakGalat galat={galat} />
         <button className="btn btn-primary btn-lg btn-block" onClick={submit} disabled={kirim}>{kirim ? 'Memulai…' : 'Mulai rit'}</button>
-        <p className="small muted">Bos mengecek jumlah muatan. Kalau hanya kurir yang menulis muatan, galon lebih bisa dijual tanpa catatan.</p>
+        <div className="mobile-note-card"><Ikon n="perisai" s={22} /><p>Minta bos menghitung ulang muatan sebelum berangkat. Rit tetap bisa dimulai sambil menunggu pengecekan.</p></div>
       </div>
     </>
   );
