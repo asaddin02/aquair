@@ -1,7 +1,7 @@
 # Spesifikasi produk AQUAIR
 
-Dokumen ini dilampirkan ke Emergent bersama prompt tiap tahap. Bagian yang ditandai
-**[T1]**, **[T2]**, dan **[T3]** menunjukkan tahap pembangunannya.
+Sumber kebenaran aturan bisnis AQUAIR. Semua bagian sudah dibangun di `backend/` dan
+`frontend/`, kecuali Ringkasan AI (bagian 8) yang ditambahkan di Emergent.
 
 ## 1. Batasan teknis
 
@@ -14,8 +14,8 @@ Dokumen ini dilampirkan ke Emergent bersama prompt tiap tahap. Bagian yang ditan
 | Lokasi | `navigator.geolocation` di browser (Emergent sudah HTTPS) |
 | Scan QR | Library JavaScript `html5-qrcode` |
 | Buat QR | Library `qrcode` (Python atau JavaScript) |
-| Peta | Leaflet + tile OpenStreetMap, tanpa API key **[T2]** |
-| AI | Universal Key Emergent **[T3]** |
+| Peta | Leaflet + tile OpenStreetMap, tanpa API key |
+| AI | Universal Key Emergent |
 | WhatsApp | Tautan `wa.me` yang dikirim dari HP bos. Tanpa API berbayar. |
 
 Aturan umum:
@@ -30,7 +30,7 @@ Aturan umum:
 |---|---|---|
 | **Bos** (pemilik depot) | Email + kata sandi | Semua: dasbor, Radar Kecurangan, pelanggan, kurir, harga, setoran, persetujuan |
 | **Kurir** | Nomor HP + PIN 6 digit | Mulai rit, catat penjualan, selesai rit. Hanya melihat rit miliknya sendiri. |
-| **Pemilik toko** | Tanpa akun, lewat tautan unik | Mengonfirmasi jumlah galon yang diterima **[T2]** |
+| **Pemilik toko** | Tanpa akun, lewat tautan unik | Mengonfirmasi jumlah galon yang diterima |
 
 Aturan akses:
 - **Banyak depot dalam satu aplikasi.** Setiap data punya `depot_id`, dan **setiap query di
@@ -43,7 +43,7 @@ Aturan akses:
 - **Mode demo:** di landing ada tombol "Coba sebagai Bos" dan "Coba sebagai Kurir". Setiap
   pengunjung masuk ke depot contoh **miliknya sendiri** tanpa kata sandi (lihat bagian 10).
 
-## 3. Alur rit kurir [T1]
+## 3. Alur rit kurir
 
 Satu **rit** = satu kali kurir berangkat membawa galon sampai kembali ke depot. Setiap
 kurir hanya boleh punya satu rit aktif.
@@ -93,9 +93,9 @@ berlaku harga toko.
   Semuanya tercatat di `audit_log`.
 - **Pelanggan baru dari kurir selalu berjenis rumah.** Hanya bos yang bisa mengubahnya
   menjadi toko.
-- **Tanpa sinyal [T1]:** tampilkan pesan jelas "Belum tersimpan — tidak ada sinyal" dengan
+- **Tanpa sinyal:** tampilkan pesan jelas "Belum tersimpan — tidak ada sinyal" dengan
   tombol coba lagi. Data yang gagal tersimpan tidak boleh tampak seolah berhasil.
-- **Antrean offline [T2]:** penjualan disimpan di HP beserta lokasi dan waktu HP, lalu
+- **Antrean offline:** penjualan disimpan di HP beserta lokasi dan waktu HP, lalu
   dikirim saat sinyal kembali dan diberi tanda `dicatat_offline`.
 
 ### 3.3 Selesai rit dan setor
@@ -117,7 +117,7 @@ Bos menekan **"Setoran diterima"** setelah menghitung ulang uang dan galon.
 "Lunas" saat uangnya diterima. Alasannya: kalau bon bebas dipilih dan tidak ditagih, kurir
 bisa menulis penjualan tunai sebagai bon lalu mengantongi uangnya.
 
-## 4. Radar Kecurangan [T1, kecuali R8]
+## 4. Radar Kecurangan
 
 Radar menunjukkan kejanggalan. Radar tidak menghukum; bos yang memutuskan.
 
@@ -139,8 +139,8 @@ saat dihitung ulang.**
   dihitung satu kali.
 - Kalau bos mematikan sakelar "Toko tanpa bukti dihitung harga rumah", penjualan itu tetap
   dihargai harga toko, jadi Rupiah R2/R4-nya masuk **Perkiraan bocor**.
-- Penjualan yang disetujui bos untuk harga toko bernilai Rp0, dan tandanya otomatis
-  berstatus `sudah_dicek_aman`.
+- Penjualan yang disetujui bos untuk harga toko bernilai Rp0: tanda R2 dan R4 penjualan itu
+  hilang dari Radar.
 - **Selisih harga** = harga rumah − harga toko (default Rp1.000).
 
 ### 4.2 Aturan
@@ -154,7 +154,7 @@ saat dihitung ulang.**
 | **R5** lompatan lokasi | Dua pencatatan berurutan dalam satu rit berjarak > 300 m dengan kecepatan tempuh > 60 km/jam | — | — |
 | **R6** kurang setor | Uang disetor < uang seharusnya | Besar kekurangan | Perkiraan bocor |
 | **R7** selisih galon | Galon terjual menurut stok ≠ menurut catatan | Bila stok > catatan: selisih galon × harga rumah. Bila catatan > stok: Rp0 (tanda tetap muncul). | Perkiraan bocor |
-| **R8** konfirmasi berbeda **[T2]** | Pemilik toko menjawab jumlah yang berbeda dari catatan | Bila toko menjawab lebih sedikit: beda galon yang dihargai harga toko × selisih harga, dikurangi Rupiah R3 toko itu pada minggu yang sama (minimal Rp0). Bila lebih banyak: Rp0. | Perkiraan bocor |
+| **R8** konfirmasi berbeda | Pemilik toko menjawab jumlah yang berbeda dari catatan | Bila toko menjawab lebih sedikit: beda galon yang dihargai harga toko × selisih harga, dikurangi Rupiah R3 toko itu pada minggu yang sama (minimal Rp0). Bila lebih banyak: Rp0. | Perkiraan bocor |
 
 ### 4.3 Tingkat risiko per kurir per hari
 
@@ -187,7 +187,7 @@ Rit Rudi: membawa 40 galon (muatan sudah dicek), pulang 0 galon isi, semua tunai
 | **Kasus A:** disetor Rp145.000 | Tidak ada R6. Tagihan kembali **Rp21.000**, perkiraan bocor **Rp3.000**, risiko **tinggi** (R1, R3, R4). |
 | **Kasus B:** disetor Rp124.000 (sesuai catatan kurir: 36 × 3.000 + 4 × 4.000) | R6 Rp21.000. Tagihan kembali **Rp21.000**, perkiraan bocor **Rp24.000**, risiko **tinggi**. |
 
-## 5. Dasbor bos [T1]
+## 5. Dasbor bos
 
 Semua ringkasan memakai **30 hari terakhir yang bergulir**, bukan "bulan ini", supaya
 angkanya tidak kosong di awal bulan.
@@ -223,7 +223,7 @@ Contoh satu kelompok di Radar:
 >
 > [Sudah dicek — aman] [Terbukti]
 
-## 6. Kelola data (bos) [T1]
+## 6. Kelola data (bos)
 
 - **Pelanggan:**
   - nama, jenis (toko/rumah), nomor WA (opsional), titik lokasi,
@@ -267,7 +267,7 @@ Contoh satu kelompok di Radar:
   - Alasannya: catatan uji coba di depot sungguhan adalah bukti dampak bisnis, jadi bos
     perlu salinan di luar aplikasi.
 
-## 7. Tahap 2 — bukti dari pelanggan dan galon pinjaman
+## 7. Bukti dari pelanggan dan galon pinjaman
 
 - **Konfirmasi pemilik toko (R8):**
   - Setiap Senin sistem menyiapkan tautan unik per toko (token acak yang di-hash di
@@ -291,7 +291,7 @@ Contoh satu kelompok di Radar:
   plus titik toko.
 - **Antrean offline** (lihat 3.2).
 
-## 8. Tahap 3 — perawatan, kepatuhan, AI, dan pemasangan
+## 8. Perawatan, kepatuhan, AI, dan pemasangan
 
 - **Perawatan mesin:**
   - daftar komponen dengan tanggal ganti terakhir dan interval default: sedimen 90 hari,
@@ -302,13 +302,13 @@ Contoh satu kelompok di Radar:
     kesehatan setempat),
   - masa berlaku SLHS, NIB,
   - daftar periksa "Tidak memakai galon dan tutup bermerek" (aturan Kemendag 2026).
-- **Ringkasan AI harian** memakai Universal Key Emergent:
+- **Ringkasan AI harian** (ditambahkan di Emergent) memakai Universal Key Emergent:
   - server mengirim angka jadi (hasil hitungan bagian 3–5, hari ini dan 30 hari) sebagai
     data terstruktur,
   - model hanya menyusun maksimal 5 kalimat dalam Bahasa Indonesia sederhana,
   - **model dilarang menyebut angka yang tidak ada di data**,
   - tampil di atas dasbor bos,
-  - di depot demo, ringkasan dibuat hanya saat tombol ditekan, maksimal 3 kali per depot
+  - ringkasan dibuat hanya saat bos menekan tombol; di depot demo maksimal 3 kali per depot
     demo, supaya kredit tidak habis oleh pengunjung.
 - **Pemasangan di HP:** manifest PWA, ikon AQUAIR, dan tombol "Pasang aplikasi" untuk kurir
   dan bos.
@@ -319,21 +319,29 @@ Contoh satu kelompok di Radar:
 |---|---|
 | `depots` | nama, harga_toko, harga_rumah, radius_m, garis_dasar_toko, kebijakan_tanpa_bukti, is_demo |
 | `users` | depot_id, peran (`bos`/`kurir`), nama, email atau no_hp, hash kata sandi atau PIN, aktif, gagal_masuk, dikunci_sampai |
-| `customers` | depot_id, jenis, nama, no_wa, lat, lng, kapasitas, laku_per_hari, boleh_bon, qr_token, status (`aktif`/`menunggu_persetujuan`), saldo_galon **[T2]** |
+| `customers` | depot_id, jenis, nama, no_wa, lat, lng, kapasitas, laku_per_hari, boleh_bon, qr_token, status (`aktif`/`menunggu_persetujuan`), saldo_galon |
 | `trips` | depot_id, kurir_id, dibawa, muatan_dicek, muatan_dicek_oleh, isi_pulang, kosong_pulang, uang_disetor, uang_seharusnya, selisih_uang, selisih_galon, status (`aktif`/`selesai`/`diterima`), berangkat_at, selesai_at |
 | `sales` | depot_id, trip_id, kurir_id, customer_id, jenis, galon_isi, galon_kosong, bayar, lunas, harga_berlaku, status_verifikasi, lat, lng, akurasi_m, jarak_m, qr_dipindai, disimulasikan, dicatat_offline, disetujui_bos, created_at |
 | `flags` | depot_id, kurir_id, trip_id, sale_id, customer_id, kode, penjelasan, perkiraan_rupiah, masuk_ke (`tagihan_kembali`/`perkiraan_bocor`/kosong), tanggal, status |
-| `confirmations` **[T2]** | depot_id, customer_id, periode, galon_tercatat, jawaban, galon_menurut_toko, token_hash, dijawab_at |
-| `maintenance` / `compliance` **[T3]** | komponen atau dokumen, tanggal_terakhir, interval_hari, berlaku_sampai |
+| `confirmations` | depot_id, customer_id, periode, galon_tercatat, jawaban, galon_menurut_toko, token_hash, dijawab_at |
+| `maintenance` / `compliance` | komponen atau dokumen, tanggal_terakhir, interval_hari, berlaku_sampai |
 | `audit_log` | depot_id, user_id, aksi, sebelum, sesudah, alasan, created_at |
 
 **Depot demo:** setiap dokumen milik depot demo punya field `kedaluwarsa_at`, dan setiap
 koleksi memakai TTL index pada field itu. Dengan begitu depot demo beserta seluruh isinya
 terhapus otomatis.
 
-## 10. Mode demo (wajib, untuk juri) [T1]
+## 10. Mode demo (wajib, untuk juri)
 
 ### 10.1 Satu depot demo per pengunjung
+
+Halaman **Masuk** hanya memiliki pilihan **Bos** dan **Kurir**:
+`admin / admin` membuka ruang pemilik dan `kurir / kurir` membuka ruang kurir (Rudi).
+Keduanya adalah akses demo publik dengan username dan kata sandi yang ditampilkan
+di petunjuk cara login pada halaman masuk. Tidak ada tab atau login khusus juri.
+Aturan depot contoh per browser, kedaluwarsa, serta
+batas pembuatan demo di bawah tetap berlaku. Akun depot sungguhan tetap memakai
+email + kata sandi atau nomor HP + PIN.
 
 Juri dan pemberi vote akan mencoba bersamaan. Kalau depot demonya dipakai bersama, satu
 orang bisa mengubah harga atau menekan "Atur ulang" saat orang lain sedang mencoba. Karena
@@ -388,7 +396,7 @@ itu:
 
 ## 11. Tampilan
 
-- **Identitas sendiri, jangan meniru merek air kemasan.** Warna utama teal `#0F766E`,
+- **Identitas sendiri, jangan meniru merek air kemasan.** Warna utama biru `#2563EB` (arahan pemilik, 15 September 2026),
   pendamping biru langit `#0284C7`, peringatan kuning `#D97706`, bahaya merah `#DC2626`,
   latar `#F8FAFC`. Font judul Plus Jakarta Sans, isi Inter.
 - **Layar kurir:**

@@ -3,8 +3,8 @@
 **Aplikasi anti-curang pengantaran galon untuk Depot Air Minum Isi Ulang (DAMIU).**
 
 Dibuat untuk lomba Emergent **Building Indonesia** (submit tutup 20 September 2026, 23:59 WIB).
-Seluruh aplikasi dibangun dan di-deploy di Emergent: React + FastAPI + MongoDB, tanpa Docker
-dan tanpa server sendiri.
+Aplikasi dibangun dan diuji di repo ini, lalu ditarik ke Emergent, dilengkapi Ringkasan AI, dan
+di-deploy di sana: React + FastAPI + MongoDB, tanpa Docker dan tanpa server sendiri.
 
 ## Masalah yang diselesaikan
 
@@ -27,36 +27,42 @@ perkiraan kerugiannya dalam Rupiah.
 
 | Bagian | Isi |
 |---|---|
-| [backend/](backend/) | FastAPI + MongoDB: mesin aturan Radar dan harga, API bos/kurir/publik, pembuat depot demo, 26 tes otomatis |
+| [backend/](backend/) | FastAPI + MongoDB: mesin aturan Radar dan harga, API bos/kurir/publik, pembuat depot demo, tes otomatis |
 | [frontend/](frontend/) | React + PWA: landing, aplikasi bos, aplikasi kurir (mobile), halaman konfirmasi pemilik toko |
 | [scripts/jalankan-lokal.sh](scripts/jalankan-lokal.sh) | Menjalankan seluruh aplikasi di laptop di satu alamat |
 | [docs/01-riset-masalah-damiu.md](docs/01-riset-masalah-damiu.md) | Masalah DAMIU dari riset internet, dengan sumber |
 | [docs/02-kasus-kurir-curang.md](docs/02-kasus-kurir-curang.md) | Bedah kasus kurir: hitungan kerugian, pola, dan lapisan pencegahan |
 | [docs/03-spesifikasi-produk.md](docs/03-spesifikasi-produk.md) | Sumber kebenaran aturan bisnis: peran, alur, Radar, contoh hitungan, data, mode demo |
 | [docs/04-strategi-lomba.md](docs/04-strategi-lomba.md) | Rubrik, jadwal, teks submission, naskah demo, rencana upvote |
-| [docs/05-panduan-uji-tahap-1.md](docs/05-panduan-uji-tahap-1.md) | Daftar uji sebelum deploy dan submit |
 | [docs/06-uji-coba-depot-keluarga.md](docs/06-uji-coba-depot-keluarga.md) | Data "sebelum", naskah izin, persiapan, tabel harian, dan cara menyusun hasil |
-| [docs/07-mencoba-di-laptop.md](docs/07-mencoba-di-laptop.md) | Cara menyalakan aplikasi di laptop dan daftar yang perlu dicoba |
-| [prompts/impor-dan-deploy.md](prompts/impor-dan-deploy.md) | Prompt untuk Emergent: tarik repo, tambah Ringkasan AI, deploy |
-| [desain/prototipe/](desain/prototipe/) | Prototipe tampilan awal (acuan desain) |
+| [docs/07-mencoba-di-laptop.md](docs/07-mencoba-di-laptop.md) | Cara menyalakan aplikasi di laptop, daftar uji sebelum dan sesudah deploy, templat perbaikan |
+| [docs/08-desain-antarmuka.md](docs/08-desain-antarmuka.md) | Identitas biru, referensi desain, logo, dan validasi perombakan antarmuka |
+| [docs/09-panduan-emergent.md](docs/09-panduan-emergent.md) | Aturan kerja agen Emergent: peta proyek, hemat kredit, konsistensi tampilan, PWA |
+| [prompts/](prompts/) | Prompt bernomor untuk Emergent, dipakai berurutan |
 
 ## Cara kerja
 
-1. **Claude** membangun dan menguji aplikasi di repo ini.
+**Cara login:** buka halaman **Masuk**, lalu pilih **Bos** atau **Kurir**. Gunakan username/kata sandi
+`admin / admin` untuk pemilik atau `kurir / kurir` untuk kurir. Setiap browser
+mendapat depot contoh sendiri. Petunjuk lengkap ada di [panduan mencoba](docs/07-mencoba-di-laptop.md).
+
+1. **Claude** (dan Codex untuk perombakan tampilan) membangun dan menguji aplikasi di repo ini.
 2. **Asadin** mencobanya di laptop dengan [docs/07-mencoba-di-laptop.md](docs/07-mencoba-di-laptop.md).
-3. Setelah sesuai, kode diunggah ke GitHub. **Emergent** menarik repo lewat "Pull from GitHub",
-   lalu menjalankan [prompts/impor-dan-deploy.md](prompts/impor-dan-deploy.md): tes, Ringkasan AI, deploy.
+3. Kode diunggah ke GitHub. **Emergent** menarik repo lewat "Pull from GitHub", lalu menjalankan
+   [prompt 1](prompts/01-deploy-dan-ringkasan-ai.md): tes, deploy, Ringkasan AI.
 4. **Asadin** menekan Submit Your App di Emergent.
+5. Fitur berikutnya dibangun Claude di laptop, diunggah, lalu ditarik Emergent dengan prompt bernomor
+   berikutnya dan di-deploy ulang (gratis).
 
 ## Status
 
 - [x] Riset masalah dan desain solusi
-- [x] Prompt Emergent Tahap 1–3
 - [x] Spesifikasi diperiksa ulang: hitungan Rupiah tanpa dobel, demo per pengunjung, celah muatan dan bon ditutup
-- [x] Prototipe UI semua layar Tahap 1–3
-- [x] Aplikasi lengkap (Tahap 1–3 kecuali Ringkasan AI) dibangun dan lulus tes otomatis serta uji antarmuka
-- [ ] Dicoba Asadin di laptop
-- [ ] Catatan kurir 7 hari terakhir terkumpul
-- [ ] Ditarik Emergent, Ringkasan AI ditambahkan, dan di-deploy
+- [x] Aplikasi lengkap (semua fitur kecuali Ringkasan AI) dibangun dan lulus tes otomatis serta uji antarmuka
+- [x] Tampilan dirombak: identitas biru, logo tetesan air, PWA; login contoh `admin / admin` dan `kurir / kurir`
+- [ ] Kode terbaru diunggah ke GitHub
+- [ ] Ditarik Emergent dan di-deploy, lalu Ringkasan AI ditambahkan
 - [ ] Submit ke lomba
+- [ ] Fitur multi-produk (LPG, galon bermerek, galon baru, isi wadah kecil) dan tambalan 2 celah anti-curang
+- [ ] Catatan kurir 7 hari terakhir terkumpul
 - [ ] Uji coba di depot keluarga (angka nyata untuk penilaian dampak bisnis)
