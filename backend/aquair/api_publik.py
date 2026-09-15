@@ -122,8 +122,9 @@ class MulaiDemo(BaseModel):
 
 
 def alamat_ip(request: Request) -> str:
+    """IP pengunjung untuk batas depot demo. Nilai terakhir X-Forwarded-For ditambahkan proxy, jadi tidak bisa dipalsukan pengunjung."""
     diteruskan = request.headers.get("x-forwarded-for", "")
-    return diteruskan.split(",")[0].strip() if diteruskan else (request.client.host if request.client else "tidak-diketahui")
+    return diteruskan.split(",")[-1].strip() if diteruskan else (request.client.host if request.client else "tidak-diketahui")
 
 
 @router.post("/demo/mulai")

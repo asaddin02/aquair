@@ -37,7 +37,9 @@ if [[ "${1:-}" == "--build" || ! -f "$AKAR/frontend/build/index.html" ]]; then
     || { echo "Build frontend gagal. Lihat $LOG/build.log"; exit 1; }
 fi
 
-pkill -f "[u]vicorn server:app --host 0.0.0.0 --port $PORT_API" 2>/dev/null || true
+if pkill -f "[u]vicorn server:app --host 0.0.0.0 --port $PORT_API" 2>/dev/null; then
+  for _ in $(seq 1 20); do (echo > "/dev/tcp/127.0.0.1/$PORT_API") 2>/dev/null || break; sleep 0.5; done
+fi
 cd "$AKAR/backend"
 MONGO_URL="mongodb://127.0.0.1:$PORT_MONGO" DB_NAME="${AQUAIR_DB:-aquair_lokal}" AQUAIR_FRONTEND_BUILD="$AKAR/frontend/build" \
   setsid nohup .venv/bin/uvicorn server:app --host 0.0.0.0 --port "$PORT_API" >"$LOG/backend.log" 2>&1 </dev/null &
