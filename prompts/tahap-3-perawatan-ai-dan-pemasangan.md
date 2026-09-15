@@ -1,5 +1,7 @@
 # Tahap 3 — perawatan mesin, kepatuhan, ringkasan AI, dan pemasangan di HP
 
+> **Catatan (15 Sep 2026):** prompt ini tidak dipakai lagi untuk membangun. Aplikasinya sudah dibangun di `backend/` dan `frontend/`; Emergent memakai [impor-dan-deploy.md](impor-dan-deploy.md). Berkas ini tetap disimpan sebagai rujukan fitur.
+
 Tempel sesudah Tahap 2 berjalan.
 
 ---

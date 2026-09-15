@@ -34,6 +34,14 @@ keluarganya.
 - **Repo ini publik.** Jangan menaruh nama asli orang, nomor telepon, kredensial, kunci
   API, atau informasi pribadi apa pun di repo.
 
+## Menjalankan dan menguji
+
+- Semua di laptop: `bash scripts/jalankan-lokal.sh` → `http://localhost:8710` (MongoDB portabel port 27717,
+  backend 8710 menyajikan build frontend). Hentikan dengan `--henti`. Port 3000–3004 dan 8001 di mesin
+  ini dipakai layanan lain; jangan disentuh.
+- Tes backend: `cd backend && MONGO_URL=mongodb://127.0.0.1:27717 .venv/bin/python -m pytest -q`.
+- Build frontend ketat: `cd frontend && CI=true npx react-scripts build` (peringatan dianggap galat).
+
 ## Cara bekerja dengan Asadin
 
 - Jawab dalam Bahasa Indonesia sederhana. Asadin baru mengenal git: jelaskan dengan

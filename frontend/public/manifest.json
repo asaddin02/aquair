@@ -1,0 +1,21 @@
+{
+  "name": "AQUAIR — Anti-curang antar galon",
+  "short_name": "AQUAIR",
+  "description": "Aplikasi anti-curang pengantaran galon untuk Depot Air Minum Isi Ulang.",
+  "lang": "id",
+  "start_url": "/?sumber=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F8FAFC",
+  "theme_color": "#0F766E",
+  "icons": [
+    { "src": "/ikon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/ikon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/ikon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Aplikasi kurir", "url": "/kurir", "icons": [{ "src": "/ikon-192.png", "sizes": "192x192" }] },
+    { "name": "Dasbor bos", "url": "/bos", "icons": [{ "src": "/ikon-192.png", "sizes": "192x192" }] }
+  ]
+}

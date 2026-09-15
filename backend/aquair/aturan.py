@@ -235,10 +235,11 @@ def hitung_radar(*, depot: dict, customers: list[dict], sales: list[dict], trips
                                     f"{nama} menerima {g} galon, padahal perkiraan stoknya masih {info['sebelum']} dari kapasitas {kap}.",
                                     bagian, BOCOR, customer_id=cid))
 
-    # R5 lompatan lokasi dalam satu rit
+    # R5 lompatan lokasi dalam satu rit. Lokasi simulasi (depot demo) tidak ikut, supaya tidak ada R5 palsu (spesifikasi 10.3).
     per_rit: dict[str, list[dict]] = defaultdict(list)
     for s in sales:
-        if dalam(s["tanggal"]) and s.get("lat") is not None and s.get("lng") is not None and s.get("trip_id"):
+        if (dalam(s["tanggal"]) and s.get("lat") is not None and s.get("lng") is not None and s.get("trip_id")
+                and not s.get("disimulasikan")):
             per_rit[s["trip_id"]].append(s)
     for daftar in per_rit.values():
         daftar.sort(key=lambda s: s["urutan_at"])

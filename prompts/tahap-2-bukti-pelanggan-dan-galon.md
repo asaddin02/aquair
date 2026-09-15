@@ -1,5 +1,7 @@
 # Tahap 2 — bukti dari pelanggan, galon pinjaman, peta, dan antrean offline
 
+> **Catatan (15 Sep 2026):** prompt ini tidak dipakai lagi untuk membangun. Aplikasinya sudah dibangun di `backend/` dan `frontend/`; Emergent memakai [impor-dan-deploy.md](impor-dan-deploy.md). Berkas ini tetap disimpan sebagai rujukan fitur.
+
 Tempel sesudah Tahap 1 berjalan dan sudah dicoba. Lampirkan ulang
 `docs/03-spesifikasi-produk.md` bila Emergent memintanya.
 

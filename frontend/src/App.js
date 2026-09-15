@@ -1,16 +1,36 @@
-import { useEffect, useState } from 'react';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import BosApp from './bos/BosApp';
+import Daftar from './halaman/Daftar';
+import KonfirmasiToko from './halaman/KonfirmasiToko';
+import Landing from './halaman/Landing';
+import Masuk from './halaman/Masuk';
+import KurirApp from './kurir/KurirApp';
+import { ToastProvider } from './komponen/umum';
+import { SesiProvider, useSesi } from './Sesi';
 
-const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
+function Penjaga({ peran, children }) {
+  const { sesi } = useSesi();
+  if (!sesi) return <Navigate to="/masuk" replace />;
+  if (sesi.peran !== peran) return <Navigate to={sesi.peran === 'bos' ? '/bos' : '/kurir'} replace />;
+  return children;
+}
 
 export default function App() {
-  const [status, setStatus] = useState('memeriksa…');
-  useEffect(() => {
-    fetch(`${API}/sehat`).then((r) => r.json()).then((d) => setStatus(d.status)).catch(() => setStatus('backend tidak terhubung'));
-  }, []);
   return (
-    <main style={{ fontFamily: 'system-ui, sans-serif', padding: 24 }}>
-      <h1>AQUAIR</h1>
-      <p>Kerangka aplikasi. Status backend: <b>{status}</b></p>
-    </main>
+    <BrowserRouter>
+      <SesiProvider>
+        <ToastProvider>
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/masuk" element={<Masuk />} />
+            <Route path="/daftar" element={<Daftar />} />
+            <Route path="/k/:token" element={<KonfirmasiToko />} />
+            <Route path="/kurir/*" element={<Penjaga peran="kurir"><KurirApp /></Penjaga>} />
+            <Route path="/bos/*" element={<Penjaga peran="bos"><BosApp /></Penjaga>} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </ToastProvider>
+      </SesiProvider>
+    </BrowserRouter>
   );
 }

@@ -1,6 +1,6 @@
 # Panduan uji Tahap 1 (Rabu 16 Sep)
 
-Tujuannya memastikan hasil Emergent layak di-deploy dan di-submit hari Kamis. Kerjakan
+Tujuannya memastikan aplikasi layak di-deploy dan di-submit hari Kamis. Bagian A–C bisa dicoba di laptop dulu ([07-mencoba-di-laptop.md](07-mencoba-di-laptop.md)), lalu diulang di alamat hasil deploy Emergent. Kerjakan
 berurutan dan centang yang lulus. Kalau ada langkah yang gagal, pakai templat prompt
 perbaikan di bagian F.
 

@@ -168,6 +168,10 @@ def test_r5_lompatan_lokasi():
     tanda = A.hitung_radar(depot=DEPOT, customers=pelanggan(), sales=[a, b], trips=[], confirmations=[], dari=HARI_INI, sampai=HARI_INI)
     assert per_kode(tanda)["R5"][0]["sale_id"] == b["_id"]
     assert A.tingkat_risiko(tanda) == "sedang"
+    # Depot demo: lokasi simulasi tidak boleh memunculkan R5 palsu
+    a["disimulasikan"] = b["disimulasikan"] = True
+    tanda = A.hitung_radar(depot=DEPOT, customers=pelanggan(), sales=[a, b], trips=[], confirmations=[], dari=HARI_INI, sampai=HARI_INI)
+    assert "R5" not in per_kode(tanda)
 
 
 def test_status_tindak_lanjut_tidak_hilang():

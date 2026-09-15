@@ -23,31 +23,30 @@ AQUAIR membuat klaim **harga toko wajib punya bukti**:
 Klaim tanpa bukti dihitung dengan harga rumah. Bos melihat semua kejanggalan beserta
 perkiraan kerugiannya dalam Rupiah.
 
-## Peta dokumen
+## Isi repo
 
-| Berkas | Isi |
+| Bagian | Isi |
 |---|---|
+| [backend/](backend/) | FastAPI + MongoDB: mesin aturan Radar dan harga, API bos/kurir/publik, pembuat depot demo, 26 tes otomatis |
+| [frontend/](frontend/) | React + PWA: landing, aplikasi bos, aplikasi kurir (mobile), halaman konfirmasi pemilik toko |
+| [scripts/jalankan-lokal.sh](scripts/jalankan-lokal.sh) | Menjalankan seluruh aplikasi di laptop di satu alamat |
 | [docs/01-riset-masalah-damiu.md](docs/01-riset-masalah-damiu.md) | Masalah DAMIU dari riset internet, dengan sumber |
 | [docs/02-kasus-kurir-curang.md](docs/02-kasus-kurir-curang.md) | Bedah kasus kurir: hitungan kerugian, pola, dan lapisan pencegahan |
-| [docs/03-spesifikasi-produk.md](docs/03-spesifikasi-produk.md) | Peran, alur, aturan bisnis, contoh hitungan, data, layar, dan mode demo |
+| [docs/03-spesifikasi-produk.md](docs/03-spesifikasi-produk.md) | Sumber kebenaran aturan bisnis: peran, alur, Radar, contoh hitungan, data, mode demo |
 | [docs/04-strategi-lomba.md](docs/04-strategi-lomba.md) | Rubrik, jadwal, teks submission, naskah demo, rencana upvote |
-| [docs/05-panduan-uji-tahap-1.md](docs/05-panduan-uji-tahap-1.md) | Daftar uji hasil Emergent sebelum deploy, dan templat prompt perbaikan |
+| [docs/05-panduan-uji-tahap-1.md](docs/05-panduan-uji-tahap-1.md) | Daftar uji sebelum deploy dan submit |
 | [docs/06-uji-coba-depot-keluarga.md](docs/06-uji-coba-depot-keluarga.md) | Data "sebelum", naskah izin, persiapan, tabel harian, dan cara menyusun hasil |
-| [prompts/](prompts/) | Prompt siap tempel ke Emergent, satu berkas per tahap |
-| [desain/prototipe/](desain/prototipe/) | Prototipe UI yang bisa diklik untuk semua layar Tahap 1–3, dengan data contoh fiktif. Buka `index.html` di Chrome (butuh internet untuk font dan QR). Ini acuan tampilan; kalau berbeda dengan spesifikasi, spesifikasi yang berlaku. |
+| [docs/07-mencoba-di-laptop.md](docs/07-mencoba-di-laptop.md) | Cara menyalakan aplikasi di laptop dan daftar yang perlu dicoba |
+| [prompts/impor-dan-deploy.md](prompts/impor-dan-deploy.md) | Prompt untuk Emergent: tarik repo, tambah Ringkasan AI, deploy |
+| [desain/prototipe/](desain/prototipe/) | Prototipe tampilan awal (acuan desain) |
 
-## Cara mulai di Emergent
+## Cara kerja
 
-1. Top-up kredit, lalu buka **Home > Profile > BUILDers CONTEST > Join the Contest**.
-2. Buat proyek **web** baru. Tempel isi [prompts/tahap-1-inti-anti-curang.md](prompts/tahap-1-inti-anti-curang.md)
-   dan lampirkan [docs/03-spesifikasi-produk.md](docs/03-spesifikasi-produk.md).
-3. Uji hasilnya dengan [docs/05-panduan-uji-tahap-1.md](docs/05-panduan-uji-tahap-1.md).
-4. Setelah lulus: **Deploy**, lalu **Submit Your App**. Jangan menunggu tahap berikutnya —
-   perbaikan sesudah submit otomatis ikut tampil.
-5. Lanjutkan ke Tahap 2 dan Tahap 3.
-
-Kalau Emergent menawarkan simpan kode ke GitHub, pilih **repo baru** (misalnya
-`aquair-app`), bukan repo ini, supaya dokumen di sini tidak tertimpa.
+1. **Claude** membangun dan menguji aplikasi di repo ini.
+2. **Asadin** mencobanya di laptop dengan [docs/07-mencoba-di-laptop.md](docs/07-mencoba-di-laptop.md).
+3. Setelah sesuai, kode diunggah ke GitHub. **Emergent** menarik repo lewat "Pull from GitHub",
+   lalu menjalankan [prompts/impor-dan-deploy.md](prompts/impor-dan-deploy.md): tes, Ringkasan AI, deploy.
+4. **Asadin** menekan Submit Your App di Emergent.
 
 ## Status
 
@@ -55,8 +54,9 @@ Kalau Emergent menawarkan simpan kode ke GitHub, pilih **repo baru** (misalnya
 - [x] Prompt Emergent Tahap 1–3
 - [x] Spesifikasi diperiksa ulang: hitungan Rupiah tanpa dobel, demo per pengunjung, celah muatan dan bon ditutup
 - [x] Prototipe UI semua layar Tahap 1–3
+- [x] Aplikasi lengkap (Tahap 1–3 kecuali Ringkasan AI) dibangun dan lulus tes otomatis serta uji antarmuka
+- [ ] Dicoba Asadin di laptop
 - [ ] Catatan kurir 7 hari terakhir terkumpul
-- [ ] Tahap 1 dibangun, diuji, dan di-deploy
+- [ ] Ditarik Emergent, Ringkasan AI ditambahkan, dan di-deploy
 - [ ] Submit ke lomba
 - [ ] Uji coba di depot keluarga (angka nyata untuk penilaian dampak bisnis)
-- [ ] Tahap 2 dan 3

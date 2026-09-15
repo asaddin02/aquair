@@ -1,5 +1,7 @@
 # Tahap 1 — inti anti-curang (bisa langsung di-submit)
 
+> **Catatan (15 Sep 2026):** prompt ini tidak dipakai lagi untuk membangun. Aplikasinya sudah dibangun di `backend/` dan `frontend/`; Emergent memakai [impor-dan-deploy.md](impor-dan-deploy.md). Berkas ini tetap disimpan sebagai rujukan fitur.
+
 Lampirkan `docs/03-spesifikasi-produk.md` bersama prompt ini. Tempel semua teks di bawah
 garis.
 

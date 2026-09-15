@@ -16,7 +16,7 @@ from .keamanan import normal_hp, sesi_kurir
 from .layanan import hitung_ulang
 
 router = APIRouter(prefix="/kurir")
-DATA_PENJUALAN = ("urutan_at",)
+DATA_PENJUALAN: tuple[str, ...] = ()
 
 
 def info_penjualan(s: dict) -> dict:
@@ -104,6 +104,19 @@ async def toko_simulasi(s: dict = Depends(sesi_kurir)):
     kurir_rute = "rudi" if s["user"]["nama"] == "Rudi" else "dimas"
     daftar.sort(key=lambda c: (c.get("rute") != kurir_rute, c["nama"]))
     return [{"id": c["_id"], "nama": c["nama"], "qr_token": c["qr_token"], "boleh_bon": c.get("boleh_bon", False)} for c in daftar]
+
+
+class CekQr(BaseModel):
+    qr_token: str = Field(min_length=8, max_length=128)
+
+
+@router.post("/qr/cek")
+async def cek_qr(b: CekQr, s: dict = Depends(sesi_kurir)):
+    """Nama toko dari QR yang baru dipindai, supaya kurir yakin tokonya benar. Token tidak dikirim balik."""
+    c = await db().customers.find_one({"depot_id": s["depot"]["_id"], "qr_token": b.qr_token, "jenis": "toko", "status": "aktif"})
+    if not c:
+        galat(400, 'QR tidak dikenal. Mungkin stiker lama yang sudah diganti bos. Pilih "Toko tanpa QR".')
+    return {"id": c["_id"], "nama": c["nama"], "boleh_bon": c.get("boleh_bon", False)}
 
 
 # ---------------------------------------------------------------- catat penjualan

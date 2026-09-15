@@ -11,3 +11,4 @@ dist/
 backend/.pytest_cache/
 frontend/build/
 *.log
+.lokal/
