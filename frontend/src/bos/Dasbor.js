@@ -7,7 +7,7 @@ import { ChipRisiko, KotakGalat, Memuat, useData } from '../komponen/umum';
 import { Panel, Ringkasan } from '../komponen/Ruang';
 import { Avatar, Halaman, warnaKurir } from './umumBos';
 
-const LABEL_KODE = { R1: 'rasio toko', R3: 'stok toko', R6: 'kurang setor', R7: 'selisih galon', R8: 'konfirmasi toko', R2: 'toko tanpa bukti' };
+const LABEL_KODE = { R1: 'rasio toko', R3: 'stok toko', R6: 'kurang setor', R7: 'selisih stok', R8: 'konfirmasi toko', R2: 'toko tanpa bukti', R9: 'galon kosong kurang' };
 
 function KartuRingkasanAI() {
   const [hasil, setHasil] = useState(null);
@@ -153,6 +153,12 @@ export default function Dasbor() {
           </ol>
         </div>
       )}
+      {d.rit_belum_ditutup?.length > 0 && (
+        <div className="banner danger" role="alert"><Ikon n="awas" s={22} />
+          <span className="grow"><b>{d.rit_belum_ditutup.length} rit dari hari sebelumnya belum ditutup.</b> Uang dan barangnya belum dicocokkan: {d.rit_belum_ditutup.map((r) => `${r.kurir.nama} (${tglPendek(r.tanggal)})`).join(', ')}. Minta kurir menekan Selesai rit & setor.</span>
+          <Link className="btn" to={`/bos/rit/${d.rit_belum_ditutup[0].id}`}>Buka rit</Link>
+        </div>
+      )}
       <section className="overview-masthead">
         <div className="overview-intro"><span className="eyebrow">{tglPanjang(hi.tanggal)}</span><h2>Bagaimana depot<br />Anda hari ini?</h2><p>{hi.rit_di_jalan ? `${hi.rit_di_jalan} rit sedang berjalan. Pantau pengantaran dan tindak lanjuti yang perlu diperiksa.` : 'Semua catatan operasional Anda terhubung di sini.'}</p><Link className="btn btn-primary" to="/bos/rit">Pantau rit hari ini<Ikon n="panah" s={18} /></Link></div>
         <div className="overview-finance"><div className="finance-heading"><span><Ikon n="perisai" s={20} />Tagihan kembali</span><small>30 hari</small></div><strong>{rp(d.tagihan_kembali)}</strong><p>Selisih harga yang ditagihkan kembali karena bukti toko belum sesuai.</p><div className="finance-secondary"><span>Perkiraan bocor<strong>{rp(d.perkiraan_bocor)}</strong></span><Link to="/bos/radar" aria-label="Periksa perkiraan bocor di Radar"><Ikon n="panah" s={22} /></Link></div><small>Keduanya berbeda dan tidak dijumlahkan.</small></div>
@@ -179,6 +185,14 @@ export default function Dasbor() {
             <Link to="/bos/rit" className="attention-item"><span className="attention-icon"><Ikon n="rit" /></span><div><b>{hi.rit_belum_dicek} muatan belum dicek</b><p>Cocokkan galon sebelum pengantaran</p></div><Ikon n="kanan" s={16} /></Link>
             {d.pengingat.map((p, i) => <Link key={`${p.komponen}-${i}`} to={p.komponen === 'SLHS' ? '/bos/kepatuhan' : '/bos/perawatan'} className={`attention-item ${p.sisa_hari < 0 ? 'urgent' : ''}`}><span className="attention-icon"><Ikon n={p.komponen === 'SLHS' ? 'perisai' : 'alat'} /></span><div><b>{p.komponen}</b><p>{p.sisa_hari < 0 ? `Terlambat ${-p.sisa_hari} hari` : `${p.sisa_hari} hari lagi`}</p></div><Ikon n="kanan" s={16} /></Link>)}
           </Panel>
+          {(hi.produk_lain?.length > 0 || hi.transaksi_depot > 0) && (
+            <Panel judul="Produk lain hari ini" ket="Di luar isi ulang galon" aksi={<Link to="/bos/depot" className="btn btn-ghost">Penjualan di depot</Link>}>
+              <div className="leak-breakdown">
+                {(hi.produk_lain || []).map((p) => <div key={p.nama}><span>{p.nama} · {p.jumlah} {p.satuan} lewat kurir</span><b>{rp(p.uang)}</b></div>)}
+                {hi.transaksi_depot > 0 && <div><span>Penjualan di depot · {hi.transaksi_depot} transaksi</span><b>{rp(hi.uang_depot)}</b></div>}
+              </div>
+            </Panel>
+          )}
           <Panel judul="Rincian perkiraan bocor" ket="30 hari terakhir"><div className="leak-breakdown">{rincian.length ? rincian.map(([k, v]) => <div key={k}><span>{LABEL_KODE[k] || k}</span><b>{rp(v)}</b><i style={{ '--porsi': `${d.perkiraan_bocor ? Math.min(100, v / d.perkiraan_bocor * 100) : 0}%` }} /></div>) : <p className="muted">Belum ada perkiraan kebocoran.</p>}</div></Panel>
           <div className="quick-links"><span className="eyebrow">AKSES CEPAT</span><Link to="/bos/pelanggan"><Ikon n="orang" />Pelanggan<Ikon n="kanan" s={16} /></Link><Link to="/bos/qr"><Ikon n="qr" />Cetak stiker QR<Ikon n="kanan" s={16} /></Link><Link to="/bos/unduh"><Ikon n="unduh" />Unduh laporan<Ikon n="kanan" s={16} /></Link></div>
         </aside>

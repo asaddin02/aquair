@@ -38,6 +38,7 @@ export default function KurirApp() {
     return () => { window.removeEventListener('online', ubah); window.removeEventListener('offline', ubah); };
   }, []);
   const beranda = useData(() => api('/kurir/beranda'), [sesi.token]);
+  const produk = useData(() => api('/kurir/produk'), [sesi.token]);
   const { muatUlang } = beranda;
   const setelahTerkirim = useCallback((n) => {
     toast(`${n} penjualan dari antrean terkirim`);
@@ -46,7 +47,7 @@ export default function KurirApp() {
   const antrean = useAntrean(sesi.depot.id, setelahTerkirim);
 
   return (
-    <KonteksKurir.Provider value={{ beranda, antrean }}>
+    <KonteksKurir.Provider value={{ beranda, antrean, produk }}>
       <div className="courier-workspace v2">
         <aside className="courier-aside"><Link className="logo" to="/"><Logo s={40} />AQUAIR<span className="logo-dot">.</span></Link><div className="eyebrow">RUANG KURIR</div><h1>Antar airnya.<br /><em>Jaga amanahnya.</em></h1><p>Setiap pengantaran tercatat. Setiap galon bisa ditelusuri. Mulai hari dengan langkah yang lebih tertata.</p><div className="courier-aside-list"><span><Ikon n="qr" />Scan QR untuk harga toko</span><span><Ikon n="galon" />Pantau galon di motor</span><span><Ikon n="uang" />Cocokkan setoran rit</span></div><span className="small muted">AQUAIR · Teman usaha depot air minum</span></aside>
         <main className="layar-kurir">

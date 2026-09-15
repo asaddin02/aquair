@@ -6,6 +6,11 @@ import { api, GalatApi, penyimpanan } from '../api';
 const kunci = (depotId) => `aquair.antrean.${depotId}`;
 
 export const bacaAntrean = (depotId) => penyimpanan.baca(kunci(depotId)) || [];
+
+// Isi antrean: bentuk baru memakai `baris` (beberapa produk), bentuk lama satu angka galon_isi.
+const barisBody = (body) => body.baris || [{ produk_id: 'utama', galon_isi: body.galon_isi || 0 }];
+export const galonUtama = (body) => barisBody(body).filter((x) => x.produk_id === 'utama').reduce((a, x) => a + x.galon_isi, 0);
+export const jumlahBarang = (body) => barisBody(body).reduce((a, x) => a + x.galon_isi, 0);
 const tulisAntrean = (depotId, isi) => penyimpanan.tulis(kunci(depotId), isi);
 
 export function tambahKeAntrean(depotId, body, label) {

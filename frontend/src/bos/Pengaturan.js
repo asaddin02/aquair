@@ -58,6 +58,7 @@ export default function Pengaturan() {
       <section className="card settings-section" id="set-aturan"><div className="settings-title"><span><Ikon n="perisai" s={24} /></span><div><h2>Verifikasi dan Radar</h2><p>Tentukan batas lokasi dan pemeriksaan penjualan toko.</p></div></div>
         {baris('set-radius', 'Radius verifikasi', 'Jarak maksimal HP kurir dari titik toko saat scan QR.', null, 'm', 'radius_m')}
         {baris('set-dasar', 'Garis dasar porsi toko', 'Dipakai aturan R1 sampai depot punya 14 hari data toko yang terverifikasi.', null, '%', 'garis_dasar_toko')}
+        {baris('set-kosong', 'Nilai galon kosong', 'Dipakai untuk memperkirakan kerugian bila galon kosong yang dibawa pulang lebih sedikit dari catatan (R9). Isi 0 kalau tidak mau dihitung dalam Rupiah.', 'Rp', null, 'nilai_galon_kosong')}
         <div className="setting"><b>Toko tanpa bukti dihitung harga rumah</b>
           <p>{draf.kebijakan_tanpa_bukti ? 'Menyala: klaim toko tanpa QR atau dari lokasi jauh dibayar harga rumah. Rupiahnya masuk Tagihan kembali.' : 'Mati: klaim tanpa bukti tetap dibayar harga toko, dan Rupiahnya pindah ke Perkiraan bocor.'}</p>
           <span className="ctrl"><Toggle nyala={draf.kebijakan_tanpa_bukti} label="Toko tanpa bukti dihitung harga rumah" onUbah={(v) => setDraf({ ...draf, kebijakan_tanpa_bukti: v })} /></span></div>

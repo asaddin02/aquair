@@ -86,12 +86,16 @@ function PetaRit({ penjualan, titikToko }) {
 
 function BetulkanMuatan({ rit, onTutup, onSimpan }) {
   const [dibawa, setDibawa] = useState(String(rit.dibawa));
+  const [lain, setLain] = useState(() => Object.fromEntries((rit.muatan_lain || []).map((m) => [m.produk_id, String(m.dibawa)])));
   const [alasan, setAlasan] = useState('');
   const [galat, setGalat] = useState(null);
+  const katalog = useData(() => api('/bos/produk'), []);
+  const produk = (katalog.data?.produk || []).filter((p) => !p.utama && p.aktif && p.dijual_kurir);
   const simpan = async () => {
     try {
-      await api(`/bos/rit/${rit.id}/muatan`, { method: 'POST', body: { dibawa: Number(dibawa), alasan } });
-      onSimpan(`Muatan ${rit.kurir.nama}: ${rit.dibawa} → ${dibawa} galon`);
+      const muatanLain = produk.filter((p) => lain[p.id] !== undefined).map((p) => ({ produk_id: p.id, dibawa: Number(lain[p.id]) || 0 }));
+      await api(`/bos/rit/${rit.id}/muatan`, { method: 'POST', body: { dibawa: Number(dibawa) || 0, alasan, muatan_lain: muatanLain } });
+      onSimpan(`Muatan ${rit.kurir.nama} dibetulkan dan tercatat di log audit`);
     } catch (e) {
       setGalat(e);
     }
@@ -99,14 +103,16 @@ function BetulkanMuatan({ rit, onTutup, onSimpan }) {
   return (
     <Modal judul={`Betulkan muatan ${rit.kurir.nama}`} onTutup={onTutup}>
       <div className="stack">
-        <p className="small muted">Kurir menulis {rit.dibawa} galon.</p>
+        <p className="small muted">Kurir menulis {rit.dibawa} galon{(rit.muatan_lain || []).map((m) => `, ${m.dibawa_kurir ?? m.dibawa} ${m.satuan} ${m.nama}`).join('')}.</p>
         <label className="field" htmlFor="muatan-baru"><span>Jumlah hasil hitungan bos</span>
           <div className="input-unit"><input id="muatan-baru" inputMode="numeric" value={dibawa} onChange={(e) => setDibawa(e.target.value.replace(/\D/g, ''))} /><span>galon</span></div></label>
+        {produk.map((p) => <label className="field" htmlFor={`muatan-${p.id}`} key={p.id}><span>{p.nama}</span>
+          <div className="input-unit"><input id={`muatan-${p.id}`} inputMode="numeric" value={lain[p.id] ?? ''} placeholder="0" onChange={(e) => setLain({ ...lain, [p.id]: e.target.value.replace(/\D/g, '') })} /><span>{p.satuan}</span></div></label>)}
         <label className="field" htmlFor="muatan-alasan"><span>Alasan</span>
           <input id="muatan-alasan" className="input" value={alasan} onChange={(e) => setAlasan(e.target.value)} placeholder="Contoh: dihitung ulang di motor, ada 45 galon" /></label>
         <KotakGalat galat={galat} />
         <div className="row" style={{ justifyContent: 'flex-end' }}><button className="btn" onClick={onTutup}>Batal</button>
-          <button className="btn btn-primary" onClick={simpan} disabled={!Number(dibawa) || alasan.trim().length < 3}>Simpan</button></div>
+          <button className="btn btn-primary" onClick={simpan} disabled={alasan.trim().length < 3}>Simpan</button></div>
       </div>
     </Modal>
   );
@@ -136,13 +142,13 @@ export function DetailRit() {
 
   return (
     <Halaman judul={`Rit ${rit.kurir.nama} · ${tglPanjang(rit.tanggal)}`} kanan={<Link className="btn btn-ghost" to={`/bos/rit?tanggal=${rit.tanggal}`}><Ikon n="kiri" s={18} />Semua rit</Link>}>
-      <div className="row"><ChipRit rit={rit} /><span className="small muted">Berangkat {rit.jam_berangkat} · muatan {rit.dibawa} galon{rit.muatan_dicek ? ` · dicek ${rit.jam_dicek}` : ''}</span></div>
+      <div className="row"><ChipRit rit={rit} /><span className="small muted">Berangkat {rit.jam_berangkat} · muatan {rit.dibawa} galon{(rit.muatan_lain || []).map((m) => ` + ${m.dibawa} ${m.satuan} ${m.nama}`).join('')}{rit.muatan_dicek ? ` · dicek ${rit.jam_dicek}` : ''}</span></div>
       <Ringkasan items={[{ label: 'Muatan berangkat', nilai: `${rit.dibawa} galon`, ikon: 'galon' }, { label: 'Penjualan tercatat', nilai: `${st.galon_catatan} galon`, ikon: 'rit' }, { label: 'Seharusnya disetor', nilai: rp(st.uang_seharusnya), ikon: 'uang' }]} />
       <nav className="section-nav no-print" aria-label="Bagian detail rit"><a href="#rit-penjualan">Penjualan</a><a href="#rit-setoran">Setoran</a><a href="#rit-peta">Peta pengantaran</a></nav>
       <KotakGalat galat={galatAksi} />
       {!rit.muatan_dicek && (
         <div className="banner warn" role="status"><Ikon n="awas" s={22} />
-          <span className="grow"><b>Muatan belum dicek.</b> {rit.kurir.nama} menulis {rit.dibawa} galon. Hitung galon di motor, lalu pilih:</span>
+          <span className="grow"><b>Muatan belum dicek.</b> {rit.kurir.nama} menulis {rit.dibawa} galon{(rit.muatan_lain || []).map((m) => `, ${m.dibawa} ${m.satuan} ${m.nama}`).join('')}. Hitung barang di motor, lalu pilih:</span>
           <span className="row" style={{ '--gap': '8px' }}>
             <button className="btn btn-primary" onClick={() => aksi(`/bos/rit/${rit.id}/muatan`, {}, 'Muatan dicek dan tercatat di log audit')}>Muatan cocok</button>
             <button className="btn" onClick={() => setBetulkan(true)}>Betulkan jumlah</button>
@@ -152,10 +158,10 @@ export function DetailRit() {
       <section id="rit-penjualan" className="stack">
         <div className="sec-head"><h3>Penjualan</h3><span className="small muted">{penjualan.length} catatan</span></div>
         <div className="table-wrap"><table>
-          <thead><tr><th>#</th><th>Jam</th><th>Pelanggan</th><th>Jenis</th><th className="r">Galon</th><th>Status</th><th className="r">Jarak ke titik</th><th className="r">Harga</th><th className="r">Total</th></tr></thead>
+          <thead><tr><th>#</th><th>Jam</th><th>Pelanggan</th><th>Jenis</th><th className="r">Jumlah</th><th>Status</th><th className="r">Jarak ke titik</th><th className="r">Harga</th><th className="r">Total</th></tr></thead>
           <tbody>{penjualan.map((x, i) => (
             <tr key={x.id}><td className="num">{i + 1}</td><td className="num">{jam(x.urutan_at || x.created_at)}</td><td>{x.nama_pelanggan}</td><td>{x.jenis}</td>
-              <td className="r num">{x.galon_isi}</td>
+              <td className="r num">{x.galon_isi}{x.produk_id && x.produk_id !== 'utama' ? <small className="muted" style={{ display: 'block' }}>{x.satuan} {x.nama_produk}</small> : null}</td>
               <td><ChipStatus status={x.status_verifikasi} disetujui={x.disetujui_bos} />{x.dicatat_offline && <> <Chip jenis="line">tanpa sinyal</Chip></>}</td>
               <td className="r num">{x.jenis === 'toko' ? jarakTeks(x.jarak_m) : '—'}</td><td className="r num">{rp(x.harga_berlaku)}</td>
               <td className="r num">{x.bayar === 'bon' ? `bon ${rp(x.galon_isi * x.harga_berlaku)}` : rp(x.galon_isi * x.harga_berlaku)}</td></tr>
@@ -169,6 +175,9 @@ export function DetailRit() {
               <tr><td>Terjual menurut stok</td><td className="r num">{rit.dibawa} − {rit.isi_pulang} = <b>{st.galon_stok}</b> galon</td></tr>
               <tr><td>Terjual menurut catatan</td><td className="r num"><b>{st.galon_catatan}</b> galon</td></tr>
               <tr><td>Selisih galon</td><td className={`r num ${st.selisih_galon ? 'danger-t' : ''}`}><b>{st.selisih_galon}</b></td></tr>
+              <tr><td>Galon kosong: catatan → dibawa pulang</td><td className={`r num ${st.selisih_kosong < 0 ? 'danger-t' : ''}`}><b>{st.kosong_catatan} → {rit.kosong_pulang}</b></td></tr>
+              {(st.produk_lain || []).map((p) => <tr key={p.produk_id}><td>{p.nama}: dibawa {p.dibawa ?? '—'}, pulang {p.isi_pulang ?? '—'} → catatan</td>
+                <td className={`r num ${p.selisih || p.selisih_kosong < 0 ? 'danger-t' : ''}`}><b>{p.stok_terjual ?? '—'} → {p.terjual_catatan} {p.satuan}</b>{p.pakai_kosong && <small style={{ display: 'block' }}>kosong {p.kosong_catatan} → {p.kosong_pulang ?? '—'}</small>}</td></tr>)}
               <tr><td>Uang seharusnya (tunai)</td><td className="r num"><b>{rp(st.uang_seharusnya)}</b></td></tr>
               {st.uang_bon > 0 && <tr><td>Penjualan bon</td><td className="r num">{rp(st.uang_bon)}</td></tr>}
               <tr><td>Uang disetor</td><td className="r num"><b>{rp(rit.uang_disetor)}</b></td></tr>

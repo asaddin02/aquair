@@ -27,7 +27,7 @@ export default function Bon() {
         <div className="work-split"><div className="work-primary"><div className="directory-toolbar"><h2 className="section-title">Daftar tagihan</h2><Cari value={cari} onChange={setCari} placeholder="Cari pelanggan dengan bon…" /></div>
           {data.pelanggan.filter((p) => p.nama.toLowerCase().includes(cari.toLowerCase())).map((p) => <article className="debt-card" key={p.customer_id}>
             <header><span className="entity-icon"><Ikon n="orang" s={24} /></span><div><h3>{p.nama}</h3><p>{p.catatan.length} catatan belum dibayar</p></div><strong>{rp(p.total)}</strong></header>
-            <details><summary>Lihat rincian penjualan<Ikon n="kanan" s={17} /></summary><ul className="list">{p.catatan.map((c, i) => <li key={i}><span className="grow">{tglPanjang(c.tanggal)}</span><span>{c.galon_isi} galon × {rp(c.harga)}</span></li>)}</ul></details>
+            <details><summary>Lihat rincian penjualan<Ikon n="kanan" s={17} /></summary><ul className="list">{p.catatan.map((c, i) => <li key={i}><span className="grow">{tglPanjang(c.tanggal)}</span><span>{c.galon_isi} {c.satuan || 'galon'}{c.nama_produk && c.nama_produk !== 'Isi ulang galon' ? ` ${c.nama_produk}` : ''} × {rp(c.harga)}</span></li>)}</ul></details>
             <footer><span>Tandai setelah pembayaran diterima.</span><button className="btn btn-primary" onClick={() => lunas(p)}><Ikon n="cek" s={18} />Lunas</button></footer>
           </article>)}
           {!data.pelanggan.filter((p) => p.nama.toLowerCase().includes(cari.toLowerCase())).length && <Kosong ikon="uang" judul={cari ? 'Pelanggan tidak ditemukan' : 'Semua bon sudah lunas'}>Tagihan yang belum dibayar akan tampil di sini.</Kosong>}

@@ -13,7 +13,9 @@ import Kurir from './Kurir';
 import Pelanggan from './Pelanggan';
 import Pengaturan from './Pengaturan';
 import Perawatan from './Perawatan';
+import PenjualanDepot from './PenjualanDepot';
 import Persetujuan from './Persetujuan';
+import Produk from './Produk';
 import Radar from './Radar';
 import { DetailRit, DaftarRit } from './Rit';
 import StikerQR from './StikerQR';
@@ -21,11 +23,11 @@ import { KonteksBos } from './umumBos';
 import Unduh from './Unduh';
 
 const MENU = [
-  ['', 'Dasbor', 'dasbor'], ['radar', 'Radar Kecurangan', 'radar'], ['rit', 'Rit & setoran', 'rit'],
+  ['', 'Dasbor', 'dasbor'], ['radar', 'Radar Kecurangan', 'radar'], ['rit', 'Rit & setoran', 'rit'], ['depot', 'Penjualan di depot', 'toko'],
   ['-', 'Data'], ['persetujuan', 'Persetujuan', 'setuju'], ['pelanggan', 'Pelanggan', 'orang'], ['qr', 'Stiker QR', 'qr'],
   ['bon', 'Bon belum lunas', 'uang'], ['kurir', 'Kurir', 'orang'],
   ['-', 'Galon dan toko'], ['galon', 'Galon di luar', 'galon'], ['konfirmasi', 'Konfirmasi toko', 'wa'],
-  ['-', 'Depot'], ['perawatan', 'Perawatan mesin', 'alat'], ['kepatuhan', 'Kepatuhan', 'perisai'], ['unduh', 'Unduh data', 'unduh'],
+  ['-', 'Depot'], ['produk', 'Produk & harga', 'galon'], ['perawatan', 'Perawatan mesin', 'alat'], ['kepatuhan', 'Kepatuhan', 'perisai'], ['unduh', 'Unduh data', 'unduh'],
   ['pengaturan', 'Pengaturan', 'gerigi'],
 ];
 
@@ -64,6 +66,8 @@ export default function BosApp() {
           <Route path="radar" element={<Radar />} />
           <Route path="rit" element={<DaftarRit />} />
           <Route path="rit/:id" element={<DetailRit />} />
+          <Route path="depot" element={<PenjualanDepot />} />
+          <Route path="produk" element={<Produk />} />
           <Route path="persetujuan" element={<Persetujuan />} />
           <Route path="pelanggan" element={<Pelanggan />} />
           <Route path="qr" element={<StikerQR />} />

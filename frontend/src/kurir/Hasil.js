@@ -17,6 +17,10 @@ export default function Hasil() {
   const [galat, setGalat] = useState(null);
   const x = state?.penjualan;
   if (!x) return <Navigate to="/kurir" replace />;
+  const semua = state.baris?.length ? state.baris : [x];
+  const total = semua.reduce((a, y) => a + y.galon_isi * y.harga_berlaku, 0);
+  const namaBarang = (y) => (!y.produk_id || y.produk_id === 'utama' ? 'galon' : `${y.satuan} ${y.nama_produk}`);
+  const bisaMinta = semua.some((y) => y.harga_toko < y.harga_rumah && y.harga_berlaku !== y.harga_toko);
 
   const depot = beranda.data?.depot;
   const ok = x.status_verifikasi === 'terverifikasi';
@@ -51,11 +55,11 @@ export default function Hasil() {
         <div className="ikon"><Ikon n={ok ? 'cek' : rumah ? 'rumah' : 'awas'} s={30} /></div>
         <div className="judul">{judul}</div>
         {!ok && !rumah && <div style={{ fontWeight: 700, fontSize: 19 }}>{tetapToko ? 'Tetap harga toko (sakelar bos dimatikan)' : `Dihitung harga rumah ${rp(x.harga_rumah)}`}</div>}
-        <div className="harga num">{x.galon_isi} galon × {rp(x.harga_berlaku)} = {rp(x.galon_isi * x.harga_berlaku)}</div>
+        <div className="harga num">{semua.length > 1 ? `${semua.length} produk · total ${rp(total)}` : `${x.galon_isi} ${namaBarang(x)} × ${rp(x.harga_berlaku)} = ${rp(total)}`}</div>
         <p style={{ fontSize: 15 }}>{alasanStatus}</p>
       </div>
-      <section className="delivery-receipt"><header><span className="eyebrow">BUKTI PENGANTARAN</span><h2>{x.nama_pelanggan}</h2></header><dl><div><dt>Galon isi diserahkan</dt><dd>{x.galon_isi} galon</dd></div><div><dt>Galon kosong diambil</dt><dd>{x.galon_kosong} galon</dd></div><div><dt>Pembayaran</dt><dd>{x.bayar === 'bon' ? 'Bon' : 'Tunai'}</dd></div><div><dt>Waktu tercatat</dt><dd>{jam(x.created_at)}</dd></div><div className="receipt-total"><dt>Total penjualan</dt><dd>{rp(x.galon_isi * x.harga_berlaku)}</dd></div></dl><footer><Ikon n="perisai" s={17} />Tersimpan di depot. Koreksi diajukan melalui bos.</footer></section>
-      {!ok && !rumah && <button className="btn btn-lg btn-block" onClick={() => setMinta(true)}>Minta bos setujui harga toko</button>}
+      <section className="delivery-receipt"><header><span className="eyebrow">BUKTI PENGANTARAN</span><h2>{x.nama_pelanggan}</h2></header><dl>{semua.map((y) => <div key={y.id}><dt>{!y.produk_id || y.produk_id === 'utama' ? 'Galon isi diserahkan' : y.nama_produk}</dt><dd>{y.galon_isi} {y.satuan || 'galon'} × {rp(y.harga_berlaku)}{y.galon_kosong ? ` · ${y.galon_kosong} kosong` : ''}</dd></div>)}<div><dt>Pembayaran</dt><dd>{x.bayar === 'bon' ? 'Bon' : 'Tunai'}</dd></div><div><dt>Waktu tercatat</dt><dd>{jam(x.created_at)}</dd></div><div className="receipt-total"><dt>Total penjualan</dt><dd>{rp(total)}</dd></div></dl><footer><Ikon n="perisai" s={17} />Tersimpan di depot. Koreksi diajukan melalui bos.</footer></section>
+      {!ok && !rumah && bisaMinta && <button className="btn btn-lg btn-block" onClick={() => setMinta(true)}>Minta bos setujui harga toko</button>}
       <button className="btn btn-primary btn-lg btn-block" onClick={() => pergi('/kurir')}>Kembali ke rit</button>
       {minta && (
         <Modal judul="Minta harga toko" onTutup={() => setMinta(false)}>

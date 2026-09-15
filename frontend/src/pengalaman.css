@@ -726,3 +726,34 @@
 .confirmation-quantity p { font-size: 14px; line-height: 1.8; }
 .confirmation-quantity .num { color: var(--brand-text); padding-block: 10px; }
 .public-confirmation .btn-lg { font-size: 16px; min-height: 56px; }
+
+/* Multi-produk: baris barang kurir, pilihan produk, katalog, dan penjualan di depot. */
+.sale-line { display: grid; gap: 10px; padding: 12px 0; border-bottom: 1px dashed var(--line-2); }
+.sale-line:last-of-type { border-bottom: 0; }
+.sale-line-head { display: flex; align-items: center; gap: 4px 10px; flex-wrap: wrap; }
+.sale-line-head b { font-size: 15px; color: var(--ink); }
+.sale-line-head .btn { margin-left: auto; min-height: 38px; }
+.product-picker { display: flex; flex-wrap: wrap; gap: 8px; }
+.product-picker button { display: inline-flex; align-items: center; gap: 6px; min-height: 48px; padding: 10px 16px; border: 1px solid var(--line-2); border-radius: 999px; background: var(--surface); color: var(--ink); font-weight: 600; }
+.product-picker button:hover { border-color: var(--brand); color: var(--brand-text); }
+.cargo-extra { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 12px; }
+.cargo-extra span { padding: 5px 10px; border-radius: 999px; background: #ffffff24; font-size: 11px; font-weight: 600; }
+.product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.product-card { display: grid; gap: 12px; align-content: start; }
+.product-card.muted { opacity: .7; }
+.product-card header { display: flex; gap: 10px; align-items: flex-start; }
+.product-card h3 { font-size: 16px; }
+.product-price { display: flex; flex-wrap: wrap; gap: 18px; }
+.product-price div { display: grid; gap: 2px; }
+.product-price small { font-size: 11px; color: var(--ink-3); }
+.product-price b { font: 800 19px/1.2 var(--f-head); color: var(--ink); }
+.quick-sale-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.quick-sale-grid button { display: grid; gap: 4px; min-height: 72px; padding: 14px; text-align: left; border: 1px solid var(--line-2); border-radius: var(--radius-sm); background: var(--surface); color: var(--ink); }
+.quick-sale-grid button[aria-pressed="true"] { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+.quick-sale-grid small { color: var(--ink-3); }
+.depot-sale-list { display: grid; margin: 0; padding: 0; list-style: none; }
+.depot-sale-list li { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.depot-sale-list li:last-child { border-bottom: 0; }
+.depot-sale-list li > div { display: grid; gap: 3px; justify-items: start; min-width: 0; }
+.depot-sale-list li.batal b { color: var(--ink-3); text-decoration: line-through; }
+.depot-sale-list .btn { min-height: 38px; padding: 6px 10px; }

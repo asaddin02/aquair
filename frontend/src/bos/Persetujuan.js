@@ -28,7 +28,7 @@ function Kartu({ a, onSelesai }) {
   };
   let isi;
   if (a.jenis === 'pelanggan') isi = <>{a.pelanggan} · dicatat {a.kurir.nama} sebagai rumah{x ? ` · ${x.galon_isi} galon pada ${tglPendek(x.tanggal)}` : ''}</>;
-  else if (a.jenis === 'harga') isi = <>{a.pelanggan} · {x?.galon_isi} galon · {NAMA_STATUS[x?.status_verifikasi]}{x?.jarak_m != null ? ` · ${jarakTeks(x.jarak_m)} dari titik toko` : ''}{x?.akurasi_m ? ` · akurasi ${Math.round(x.akurasi_m)} m` : ''}. Alasan kurir: "{a.alasan_kurir}"</>;
+  else if (a.jenis === 'harga') isi = <>{a.pelanggan} · {x?.galon_isi} {x?.satuan || 'galon'}{x?.nama_produk && x.nama_produk !== 'Isi ulang galon' ? ` ${x.nama_produk} (dan produk lain di kunjungan yang sama)` : ''} · {NAMA_STATUS[x?.status_verifikasi]}{x?.jarak_m != null ? ` · ${jarakTeks(x.jarak_m)} dari titik toko` : ''}{x?.akurasi_m ? ` · akurasi ${Math.round(x.akurasi_m)} m` : ''}. Alasan kurir: "{a.alasan_kurir}"</>;
   else isi = <>{a.pelanggan} · {tglPendek(x?.tanggal)} {x?.jam} · galon isi {x?.galon_isi} → <b>{a.data.galon_isi}</b>, kosong {x?.galon_kosong} → <b>{a.data.galon_kosong}</b>. Alasan kurir: "{a.alasan_kurir}"</>;
   return (
     <article className="card approval">

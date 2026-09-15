@@ -4,6 +4,7 @@ import { jam, rp } from '../format';
 import Ikon from '../komponen/Ikon';
 import { Cari, Kosong, TabPilihan } from '../komponen/Ruang';
 import { ChipStatus, KotakGalat, Memuat } from '../komponen/umum';
+import { jumlahBarang } from './antrean';
 import { KTop, useKurir } from './KurirApp';
 
 export function DaftarPenjualan({ batas, cari = '', filter = 'semua' }) {
@@ -16,12 +17,12 @@ export function DaftarPenjualan({ batas, cari = '', filter = 'semua' }) {
   if (!daftar.length) return <Kosong ikon="rit" judul={cari || filter !== 'semua' ? 'Catatan tidak ditemukan' : 'Belum ada penjualan'}>{cari || filter !== 'semua' ? 'Coba kata kunci atau pilihan lain.' : 'Penjualan yang Anda simpan akan muncul di sini.'}</Kosong>;
   return <div className="sales-timeline">{daftar.slice(0, batas || daftar.length).map((x) => x.antre ? (
     <article className="sale-entry pending" key={x.body.client_id}>
-      <span className="sale-icon"><Ikon n="sinyal" s={20} /></span><div className="sale-detail"><h3>{x.label?.nama || 'Penjualan offline'}</h3><p>{x.body.galon_isi} galon · belum terkirim</p><span className="chip warn">Menunggu sinyal</span>{x.galat && <><p className="danger-t">{x.galat}</p><button className="btn" onClick={() => antrean.buang(x.body.client_id)}>Hapus dari antrean</button></>}</div>
+      <span className="sale-icon"><Ikon n="sinyal" s={20} /></span><div className="sale-detail"><h3>{x.label?.nama || 'Penjualan offline'}</h3><p>{x.label?.barang || `${jumlahBarang(x.body)} barang`} · belum terkirim</p><span className="chip warn">Menunggu sinyal</span>{x.galat && <><p className="danger-t">{x.galat}</p><button className="btn" onClick={() => antrean.buang(x.body.client_id)}>Hapus dari antrean</button></>}</div>
     </article>
   ) : (
     <article className="sale-entry" key={x.id}>
       <span className={`sale-icon ${x.jenis}`}><Ikon n={x.jenis === 'rumah' ? 'rumah' : 'toko'} s={20} /></span>
-      <div className="sale-detail"><div className="sale-title"><h3>{x.nama_pelanggan}</h3><strong className="num">{rp(x.galon_isi * x.harga_berlaku)}</strong></div><p>{jam(x.urutan_at || x.created_at)} · {x.galon_isi} galon × {rp(x.harga_berlaku)} · {x.bayar}{x.dicatat_offline ? ' · dari antrean offline' : ''}</p><div className="sale-footer"><ChipStatus status={x.status_verifikasi} disetujui={x.disetujui_bos} />{diajukan.has(x.id) ? <small>Menunggu keputusan bos</small> : <Link to={`/kurir/koreksi/${x.id}`}>Ajukan koreksi<Ikon n="kanan" s={14} /></Link>}</div></div>
+      <div className="sale-detail"><div className="sale-title"><h3>{x.nama_pelanggan}</h3><strong className="num">{rp(x.galon_isi * x.harga_berlaku)}</strong></div><p>{jam(x.urutan_at || x.created_at)} · {x.galon_isi} {x.satuan || 'galon'}{x.produk_id && x.produk_id !== 'utama' ? ` ${x.nama_produk}` : ''} × {rp(x.harga_berlaku)} · {x.bayar}{x.dicatat_offline ? ' · dari antrean offline' : ''}</p><div className="sale-footer"><ChipStatus status={x.status_verifikasi} disetujui={x.disetujui_bos} />{diajukan.has(x.id) ? <small>Menunggu keputusan bos</small> : <Link to={`/kurir/koreksi/${x.id}`}>Ajukan koreksi<Ikon n="kanan" s={14} /></Link>}</div></div>
     </article>
   ))}</div>;
 }
