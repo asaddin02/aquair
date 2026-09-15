@@ -190,3 +190,73 @@ def test_r1_hanya_bila_minimal_10_galon(galon, verif, harapan):
     tanda = A.hitung_radar(depot={**DEPOT, "garis_dasar_toko": 50}, customers=pelanggan(), sales=[s for s in sales if s["galon_isi"]],
                            trips=[], confirmations=[], dari=HARI_INI, sampai=HARI_INI)
     assert ("R1" in per_kode(tanda)) is harapan
+
+
+# ---------------------------------------------------------------- multi-produk, R7 per produk, R9 galon kosong
+LPG = {"_id": "lpg", "nama": "LPG 3 kg", "satuan": "tabung", "harga_rumah": 22000, "harga_toko": 21000, "pakai_kosong": True}
+BERMEREK = {"_id": "merek", "nama": "Air galon bermerek", "satuan": "galon", "harga_rumah": 21000, "harga_toko": None, "pakai_kosong": True}
+
+
+def jual_produk(kurir, tanggal, cid, jenis, jumlah, status, produk, kosong=0, **lain):
+    harga, toko, rumah = A.harga_produk(jenis, status, DEPOT, produk)
+    return jual(kurir, tanggal, cid, jenis, jumlah, status, produk_id=produk["_id"], nama_produk=produk["nama"], satuan=produk["satuan"],
+                galon_kosong=kosong, harga_berlaku=harga, harga_toko=toko, harga_rumah=rumah, **lain)
+
+
+def test_harga_produk_hanya_murah_bila_ada_harga_toko_dan_terbukti():
+    assert A.harga_produk("toko", A.TERVERIFIKASI, DEPOT, LPG) == (21000, 21000, 22000)
+    assert A.harga_produk("toko", A.TANPA_QR, DEPOT, LPG) == (22000, 21000, 22000)
+    assert A.harga_produk("toko", A.TERVERIFIKASI, DEPOT, BERMEREK) == (21000, 21000, 21000)
+    assert A.harga_produk("rumah", A.RUMAH, DEPOT, None) == (4000, 3000, 4000)
+
+
+def test_r2_per_produk_dan_r4_sekali_per_kunjungan():
+    sales = penjualan_contoh()
+    sales += [jual_produk("rudi", HARI_INI, "maju", "toko", 2, A.LOKASI_JAUH, LPG, kunjungan_id="k1", baris_ke=1, jarak=1200),
+              jual_produk("rudi", HARI_INI, "lain", "toko", 3, A.TANPA_QR, BERMEREK)]
+    tanda, _ = radar_rudi(145000 - 21000 + 2 * 22000 + 3 * 21000, sales=sales)
+    k = per_kode(tanda)
+    r2 = {f["kunci"]: f for f in k["R2"]}
+    assert r2["R2"]["perkiraan_rupiah"] == 21000 and r2["R2:lpg"]["perkiraan_rupiah"] == 2000
+    assert "R2:merek" not in r2, "produk tanpa harga toko tidak butuh bukti"
+    assert len(k["R4"]) == 1, "baris kedua kunjungan yang sama tidak menambah R4"
+    assert A.dua_angka(tanda)["tagihan_kembali"] == 23000
+
+
+def test_r1_r3_dan_statistik_hanya_isi_ulang_galon():
+    dasar, _ = radar_rudi(145000)
+    sales = penjualan_contoh() + [jual_produk("rudi", HARI_INI, "sr", "toko", 5, A.TERVERIFIKASI, LPG)]
+    tanda, _ = radar_rudi(145000 + 5 * 21000, sales=sales)
+    ambil = lambda t, kode: [(f["penjelasan"], f["perkiraan_rupiah"]) for f in t if f["kode"] == kode]  # noqa: E731
+    assert ambil(tanda, "R1") == ambil(dasar, "R1") and ambil(tanda, "R3") == ambil(dasar, "R3")
+    assert A.statistik_harian(sales)[("rudi", HARI_INI)]["total"] == 40
+
+
+def test_setoran_semua_produk_dan_galon_kosong():
+    trip = {"dibawa": 10, "isi_pulang": 0, "kosong_pulang": 6, "uang_disetor": 0,
+            "muatan_lain": [{"produk_id": "lpg", "nama": "LPG 3 kg", "satuan": "tabung", "harga_rumah": 22000, "pakai_kosong": True,
+                             "dibawa": 5, "isi_pulang": 1, "kosong_pulang": 2}]}
+    sales = [jual("rudi", HARI_INI, "bu", "rumah", 10, A.RUMAH, galon_kosong=8),
+             jual_produk("rudi", HARI_INI, "bu", "rumah", 3, A.RUMAH, LPG, kosong=3)]
+    st = A.hitung_setoran(trip, sales)
+    assert st["uang_seharusnya"] == 10 * 4000 + 3 * 22000 and st["galon_catatan"] == 10
+    assert st["kosong_catatan"] == 8 and st["selisih_kosong"] == -2
+    lpg = st["produk_lain"][0]
+    assert (lpg["stok_terjual"], lpg["terjual_catatan"], lpg["selisih"], lpg["selisih_kosong"]) == (4, 3, 1, -1)
+
+
+def test_r7_per_produk_dan_r9_galon_kosong_kurang():
+    depot = {**DEPOT, "nilai_galon_kosong": 30000}
+    trip = {"_id": "rit-x", "kurir_id": "rudi", "tanggal": HARI_INI, "status": "selesai", "dibawa": 10, "isi_pulang": 0, "kosong_pulang": 6,
+            "uang_disetor": 10 * 4000 + 3 * 22000,
+            "muatan_lain": [{"produk_id": "lpg", "nama": "LPG 3 kg", "satuan": "tabung", "harga_rumah": 22000, "pakai_kosong": True,
+                             "dibawa": 5, "isi_pulang": 1, "kosong_pulang": 2}]}
+    sales = [jual("rudi", HARI_INI, "bu", "rumah", 10, A.RUMAH, galon_kosong=8, trip="rit-x"),
+             jual_produk("rudi", HARI_INI, "bu", "rumah", 3, A.RUMAH, LPG, kosong=3, trip="rit-x")]
+    tanda = A.hitung_radar(depot=depot, customers=pelanggan(), sales=sales, trips=[trip], confirmations=[], dari=HARI_INI, sampai=HARI_INI)
+    k = {f["kunci"]: f for f in tanda}
+    assert k["R9:rit-x"]["perkiraan_rupiah"] == 2 * 30000 and "catatan 8" in k["R9:rit-x"]["penjelasan"]
+    assert k["R7:rit-x:lpg"]["perkiraan_rupiah"] == 22000 and "R7:rit-x" not in k
+    assert k["R9:rit-x:lpg"]["perkiraan_rupiah"] == 0
+    assert A.tingkat_risiko([k["R9:rit-x:lpg"]]) == "sedang", "R9 tanpa Rupiah berisiko sedang"
+    assert A.tingkat_risiko([k["R9:rit-x"]]) == "tinggi", "perkiraan bocor ≥ Rp15.000 berisiko tinggi (4.3)"

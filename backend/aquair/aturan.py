@@ -25,6 +25,8 @@ RUMAH = "rumah"
 TAGIHAN = "tagihan_kembali"
 BOCOR = "perkiraan_bocor"
 
+UTAMA = "utama"  # produk isi ulang galon; harganya di pengaturan depot, dan hanya produk ini yang dipakai R1, R3, R8
+
 AKURASI_MAKS_M = 100
 R1_MIN_GALON = 10
 R1_AMBANG = 0.25
@@ -88,6 +90,27 @@ def harga_berlaku(jenis: str, status: str, depot: dict) -> int:
     return depot["harga_rumah"]
 
 
+def harga_produk(jenis: str, status: str, depot: dict, produk: dict | None = None) -> tuple[int, int, int]:
+    """(harga_berlaku, harga_toko, harga_rumah) satu baris penjualan. produk None = isi ulang galon utama.
+
+    Harga toko hanya berlaku bila produk punya harga toko yang lebih murah dan penjualan tokonya terbukti
+    (atau sakelar "toko tanpa bukti dihitung harga rumah" dimatikan). Produk tanpa harga toko selalu harga rumah.
+    """
+    if produk is None:
+        return harga_berlaku(jenis, status, depot), depot["harga_toko"], depot["harga_rumah"]
+    rumah = produk["harga_rumah"]
+    toko = produk.get("harga_toko")
+    toko = rumah if toko is None or toko >= rumah else toko
+    if jenis == "rumah" or toko == rumah:
+        return rumah, toko, rumah
+    return (toko if status == TERVERIFIKASI or not depot.get("kebijakan_tanpa_bukti", True) else rumah), toko, rumah
+
+
+def produk_utama(s: dict) -> bool:
+    """Baris isi ulang galon utama. Penjualan lama tanpa produk_id termasuk di sini."""
+    return (s.get("produk_id") or UTAMA) == UTAMA
+
+
 def berharga_toko(s: dict) -> bool:
     """Penjualan toko yang sah dihargai harga toko: terverifikasi atau disetujui bos."""
     return s["jenis"] == "toko" and (s["status_verifikasi"] == TERVERIFIKASI or bool(s.get("disetujui_bos")))
@@ -99,16 +122,49 @@ def tanpa_bukti(s: dict) -> bool:
 
 # ---------------------------------------------------------------- 3.3 setoran
 def hitung_setoran(trip: dict, sales: list[dict]) -> dict:
-    catatan = sum(s["galon_isi"] for s in sales)
+    """Galon dan galon kosong dihitung untuk isi ulang galon utama; uang dari semua produk."""
+    utama = [s for s in sales if produk_utama(s)]
+    catatan = sum(s["galon_isi"] for s in utama)
+    kosong = sum(s["galon_kosong"] for s in utama)
     seharusnya = sum(s["galon_isi"] * s["harga_berlaku"] for s in sales if s["bayar"] == "tunai")
     bon = sum(s["galon_isi"] * s["harga_berlaku"] for s in sales if s["bayar"] == "bon")
     hasil = {"galon_catatan": catatan, "uang_seharusnya": seharusnya, "uang_bon": bon,
-             "galon_di_motor": trip["dibawa"] - catatan, "galon_stok": None, "selisih_galon": None, "selisih_uang": None}
+             "galon_di_motor": trip["dibawa"] - catatan, "galon_stok": None, "selisih_galon": None, "selisih_uang": None,
+             "kosong_catatan": kosong, "selisih_kosong": None, "produk_lain": pencocokan_produk_lain(trip, sales)}
     if trip.get("isi_pulang") is not None:
         stok = trip["dibawa"] - trip["isi_pulang"]
         hasil.update(galon_stok=stok, selisih_galon=stok - catatan)
+    if trip.get("kosong_pulang") is not None:
+        hasil["selisih_kosong"] = trip["kosong_pulang"] - kosong
     if trip.get("uang_disetor") is not None:
         hasil["selisih_uang"] = trip["uang_disetor"] - seharusnya
+    return hasil
+
+
+def pencocokan_produk_lain(trip: dict, sales: list[dict]) -> list[dict]:
+    """Per produk selain isi ulang galon: muatan berangkat, catatan penjualan, dan yang dibawa pulang."""
+    muatan = {m["produk_id"]: m for m in trip.get("muatan_lain") or []}
+    jual: dict[str, dict] = {}
+    for s in sales:
+        if produk_utama(s):
+            continue
+        j = jual.setdefault(s["produk_id"], {"nama": s.get("nama_produk"), "satuan": s.get("satuan"), "isi": 0, "kosong": 0})
+        j["isi"] += s["galon_isi"]
+        j["kosong"] += s["galon_kosong"]
+    hasil = []
+    for pid in list(muatan) + [p for p in jual if p not in muatan]:
+        m, j = muatan.get(pid, {}), jual.get(pid, {"isi": 0, "kosong": 0})
+        dibawa, isi_pulang, kosong_pulang = m.get("dibawa"), m.get("isi_pulang"), m.get("kosong_pulang")
+        b = {"produk_id": pid, "nama": m.get("nama") or j.get("nama") or "Produk", "satuan": m.get("satuan") or j.get("satuan") or "pcs",
+             "harga_rumah": m.get("harga_rumah"), "pakai_kosong": bool(m.get("pakai_kosong")), "dibawa": dibawa,
+             "terjual_catatan": j["isi"], "di_motor": None if dibawa is None else dibawa - j["isi"], "isi_pulang": isi_pulang,
+             "stok_terjual": None, "selisih": None, "kosong_catatan": j["kosong"], "kosong_pulang": kosong_pulang, "selisih_kosong": None}
+        if dibawa is not None and isi_pulang is not None:
+            b["stok_terjual"] = dibawa - isi_pulang
+            b["selisih"] = b["stok_terjual"] - j["isi"]
+        if kosong_pulang is not None:
+            b["selisih_kosong"] = kosong_pulang - j["kosong"]
+        hasil.append(b)
     return hasil
 
 
@@ -117,6 +173,8 @@ def statistik_harian(sales: list[dict]) -> dict[tuple[str, str], dict]:
     """Per (kurir_id, tanggal): total galon, galon toko (semua status), galon berharga toko, galon rumah."""
     h: dict[tuple[str, str], dict] = defaultdict(lambda: {"total": 0, "toko": 0, "verif": 0, "rumah": 0})
     for s in sales:
+        if not produk_utama(s):
+            continue
         d = h[(s["kurir_id"], s["tanggal"])]
         d["total"] += s["galon_isi"]
         if s["jenis"] == "toko":
@@ -149,7 +207,7 @@ def hitung_stok_toko(customers: list[dict], sales: list[dict], sampai: str) -> d
     """
     antar: dict[str, dict[str, dict[str, int]]] = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
     for s in sales:
-        if berharga_toko(s):
+        if berharga_toko(s) and produk_utama(s):
             antar[s["customer_id"]][s["tanggal"]][s["kurir_id"]] += s["galon_isi"]
     hasil: dict[str, dict[str, dict]] = {}
     for c in customers:
@@ -195,28 +253,38 @@ def hitung_radar(*, depot: dict, customers: list[dict], sales: list[dict], trips
                                 f"{d['toko']} dari {d['total']} galon dicatat sebagai toko ({round(porsi * 100)}%). Garis dasar depot: {round(gd * 100)}%.",
                                 rupiah, BOCOR))
 
-    # R2 toko tanpa bukti, dan R4 QR dipindai jauh
-    kelompok_r2: dict[tuple, dict] = defaultdict(lambda: {"galon": 0, "rupiah": 0})
+    # R2 toko tanpa bukti (per produk yang punya harga toko lebih murah), dan R4 QR dipindai jauh (sekali per kunjungan)
+    kelompok_r2: dict[tuple, dict] = {}
     for s in sales:
         if not dalam(s["tanggal"]) or not tanpa_bukti(s):
             continue
-        lolos = s["harga_berlaku"] == s["harga_toko"]  # sakelar harga rumah mati saat penjualan
-        g = kelompok_r2[(s["kurir_id"], s["tanggal"], lolos)]
-        g["galon"] += s["galon_isi"]
-        g["rupiah"] += s["galon_isi"] * (s["harga_rumah"] - s["harga_toko"])
-        if s["status_verifikasi"] == LOKASI_JAUH:
+        selisih = s["harga_rumah"] - s["harga_toko"]
+        if s["status_verifikasi"] == LOKASI_JAUH and s.get("baris_ke", 0) == 0:
             nama = pelanggan.get(s["customer_id"], {}).get("nama", "toko")
+            barang = f"{s['galon_isi']} {'galon' if produk_utama(s) else s.get('satuan') or 'barang'}"
             tanda.append(_tanda(s["kurir_id"], s["tanggal"], "R4", f"R4:{s['_id']}",
-                                f"QR {nama} dipindai {teks_jarak(s.get('jarak_m') or 0)} dari lokasi toko ({s['galon_isi']} galon, sudah dihitung di R2).",
+                                f"QR {nama} dipindai {teks_jarak(s.get('jarak_m') or 0)} dari lokasi toko ({barang}, "
+                                f"{'sudah dihitung di R2' if selisih > 0 else 'produk tanpa harga toko'}).",
                                 None, TAGIHAN, sale_id=s["_id"], customer_id=s["customer_id"], trip_id=s.get("trip_id")))
-    for (kurir, t, lolos), g in kelompok_r2.items():
+        if selisih <= 0:
+            continue
+        lolos = s["harga_berlaku"] == s["harga_toko"]  # sakelar harga rumah mati saat penjualan
+        pid = s.get("produk_id") or UTAMA
+        g = kelompok_r2.setdefault((s["kurir_id"], s["tanggal"], lolos, pid),
+                                   {"galon": 0, "rupiah": 0, "nama": s.get("nama_produk"), "satuan": s.get("satuan")})
+        g["galon"] += s["galon_isi"]
+        g["rupiah"] += s["galon_isi"] * selisih
+    for (kurir, t, lolos, pid), g in kelompok_r2.items():
+        utama = pid == UTAMA
+        barang = "galon toko" if utama else f"{g['satuan']} {g['nama']} ke toko"
+        akhiran = "" if utama else f":{pid}"
         if lolos:
-            tanda.append(_tanda(kurir, t, "R2", "R2:lolos",
-                                f"{g['galon']} galon toko tanpa bukti tetap dibayar harga toko karena sakelar \"harga rumah\" mati.",
+            tanda.append(_tanda(kurir, t, "R2", f"R2:lolos{akhiran}",
+                                f"{g['galon']} {barang} tanpa bukti tetap dibayar harga toko karena sakelar \"harga rumah\" mati.",
                                 g["rupiah"], BOCOR))
         else:
-            tanda.append(_tanda(kurir, t, "R2", "R2",
-                                f"{g['galon']} galon toko tanpa bukti → dihitung harga rumah.", g["rupiah"], TAGIHAN))
+            tanda.append(_tanda(kurir, t, "R2", f"R2{akhiran}",
+                                f"{g['galon']} {barang} tanpa bukti → dihitung harga rumah.", g["rupiah"], TAGIHAN))
 
     # R3 stok toko tidak wajar
     stok = hitung_stok_toko(customers, sales, sampai)
@@ -239,7 +307,7 @@ def hitung_radar(*, depot: dict, customers: list[dict], sales: list[dict], trips
     per_rit: dict[str, list[dict]] = defaultdict(list)
     for s in sales:
         if (dalam(s["tanggal"]) and s.get("lat") is not None and s.get("lng") is not None and s.get("trip_id")
-                and not s.get("disimulasikan")):
+                and not s.get("disimulasikan") and s.get("baris_ke", 0) == 0):
             per_rit[s["trip_id"]].append(s)
     for daftar in per_rit.values():
         daftar.sort(key=lambda s: s["urutan_at"])
@@ -253,7 +321,7 @@ def hitung_radar(*, depot: dict, customers: list[dict], sales: list[dict], trips
                                     f"Dua pencatatan berurutan berjarak {teks_jarak(jarak)} dalam {laju}.",
                                     None, None, sale_id=b["_id"], trip_id=b.get("trip_id")))
 
-    # R6 kurang setor, R7 selisih galon
+    # R6 kurang setor, R7 selisih stok, R9 galon kosong kurang
     penjualan_rit: dict[str, list[dict]] = defaultdict(list)
     for s in sales:
         if s.get("trip_id"):
@@ -271,13 +339,27 @@ def hitung_radar(*, depot: dict, customers: list[dict], sales: list[dict], trips
             tanda.append(_tanda(trip["kurir_id"], trip["tanggal"], "R7", f"R7:{trip['_id']}",
                                 f"Stok berkurang {st['galon_stok']} galon, catatan {st['galon_catatan']} galon.",
                                 rupiah, BOCOR, trip_id=trip["_id"]))
+        if st["selisih_kosong"] is not None and st["selisih_kosong"] < 0:
+            tanda.append(_tanda(trip["kurir_id"], trip["tanggal"], "R9", f"R9:{trip['_id']}",
+                                f"Galon kosong dibawa pulang {trip['kosong_pulang']}, catatan {st['kosong_catatan']} galon.",
+                                -st["selisih_kosong"] * int(depot.get("nilai_galon_kosong") or 0), BOCOR, trip_id=trip["_id"]))
+        for p in st["produk_lain"]:
+            if p["selisih"]:
+                tanda.append(_tanda(trip["kurir_id"], trip["tanggal"], "R7", f"R7:{trip['_id']}:{p['produk_id']}",
+                                    f"{p['nama']}: stok berkurang {p['stok_terjual']} {p['satuan']}, catatan {p['terjual_catatan']} {p['satuan']}.",
+                                    p["selisih"] * (p["harga_rumah"] or 0) if p["selisih"] > 0 else 0, BOCOR, trip_id=trip["_id"]))
+            if p["pakai_kosong"] and p["selisih_kosong"] is not None and p["selisih_kosong"] < 0:
+                tanda.append(_tanda(trip["kurir_id"], trip["tanggal"], "R9", f"R9:{trip['_id']}:{p['produk_id']}",
+                                    f"{p['nama']}: kosong dibawa pulang {p['kosong_pulang']}, catatan {p['kosong_catatan']} {p['satuan']}.",
+                                    0, BOCOR, trip_id=trip["_id"]))
 
     # R8 konfirmasi pemilik toko berbeda
     for k in confirmations:
         if k.get("jawaban") != "berbeda" or not k.get("tanggal_jawab") or not dalam(k["tanggal_jawab"]):
             continue
         cid, mulai, selesai = k["customer_id"], k["periode_mulai"], k["periode_selesai"]
-        di_periode = [s for s in sales if s["customer_id"] == cid and s["jenis"] == "toko" and mulai <= s["tanggal"] <= selesai]
+        di_periode = [s for s in sales if s["customer_id"] == cid and s["jenis"] == "toko" and produk_utama(s)
+                      and mulai <= s["tanggal"] <= selesai]
         per_kurir: dict[str, int] = defaultdict(int)
         for s in di_periode:
             per_kurir[s["kurir_id"]] += s["galon_isi"]

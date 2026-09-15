@@ -12,7 +12,7 @@ from pymongo import ASCENDING, IndexModel
 
 WIB = ZoneInfo("Asia/Jakarta")
 KOLEKSI_DEPOT = ["depots", "users", "customers", "trips", "sales", "flags", "approvals", "confirmations",
-                 "maintenance", "compliance", "audit_log"]
+                 "maintenance", "compliance", "audit_log", "products", "depot_sales"]
 
 _klien: AsyncIOMotorClient | None = None
 
@@ -90,6 +90,8 @@ async def siapkan_indeks():
     await d.sales.create_index([("depot_id", ASCENDING), ("client_id", ASCENDING)], unique=True,
                                partialFilterExpression={"client_id": {"$type": "string"}}, name="client_id_unik")
     await d.flags.create_index([("depot_id", ASCENDING), ("tanggal", ASCENDING)])
+    await d.sales.create_index([("depot_id", ASCENDING), ("kunjungan_id", ASCENDING)])
+    await d.depot_sales.create_index([("depot_id", ASCENDING), ("tanggal", ASCENDING)])
     await d.trips.create_index([("depot_id", ASCENDING), ("kurir_id", ASCENDING), ("status", ASCENDING)])
     await d.confirmations.create_index("token_hash")
     await d.demo_requests.create_index("created_at", expireAfterSeconds=3600)

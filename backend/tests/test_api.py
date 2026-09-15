@@ -193,8 +193,10 @@ async def test_alur_demo_juri(klien):
 
     # Selesai rit kurang setor → R6
     st = (await klien.get("/api/kurir/beranda", headers=h(kurir))).json()["setoran"]
+    lain = [{"produk_id": p["produk_id"], "isi_pulang": p["di_motor"], "kosong_pulang": p["kosong_catatan"]} for p in st["produk_lain"]]
+    assert lain, "rit demo Rudi membawa produk lain"
     r = await klien.post("/api/kurir/rit/selesai", headers=h(kurir), json={"isi_pulang": st["galon_di_motor"], "kosong_pulang": 10,
-                                                                           "uang_disetor": st["uang_seharusnya"] - 3000})
+                                                                           "uang_disetor": st["uang_seharusnya"] - 3000, "lain": lain})
     assert r.json()["setoran"]["selisih_uang"] == -3000
     detail = (await klien.get(f"/api/bos/rit/{rit['id']}", headers=h(bos))).json()
     assert any(f["kode"] == "R6" and f["perkiraan_rupiah"] == 3000 for f in detail["tanda"]["tanda"])

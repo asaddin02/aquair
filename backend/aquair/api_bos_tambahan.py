@@ -39,11 +39,11 @@ def waktu_csv(dt) -> str:
     return dt.astimezone(WIB).strftime("%Y-%m-%d %H:%M") if dt else ""
 
 
-NAMA_JENIS = {"penjualan": "penjualan", "rit": "rit-setoran", "tanda": "tanda-radar", "audit": "log-audit"}
+NAMA_JENIS = {"penjualan": "penjualan", "rit": "rit-setoran", "tanda": "tanda-radar", "audit": "log-audit", "depot": "penjualan-depot"}
 
 
 @router.get("/unduh")
-async def unduh_csv(jenis: Literal["penjualan", "rit", "tanda", "audit"] = "penjualan", dari: str | None = None,
+async def unduh_csv(jenis: Literal["penjualan", "rit", "tanda", "audit", "depot"] = "penjualan", dari: str | None = None,
                     sampai: str | None = None, s: dict = Depends(sesi_bos)):
     depot, d = s["depot"], db()
     sampai = sampai or tanggal_wib()
@@ -56,17 +56,18 @@ async def unduh_csv(jenis: Literal["penjualan", "rit", "tanda", "audit"] = "penj
     baris: list[list[str]] = []
 
     if jenis == "penjualan":
-        kepala = ["waktu", "kurir", "pelanggan", "jenis", "galon_isi", "galon_kosong", "bayar", "lunas", "status_verifikasi",
-                  "disetujui_bos", "jarak_m", "akurasi_m", "harga_berlaku", "total", "dicatat_offline", "disimulasikan"]
-        for x in await d.sales.find(rentang).sort("urutan_at", 1).to_list(None):
+        kepala = ["waktu", "kurir", "pelanggan", "jenis", "produk", "satuan", "jumlah_isi", "jumlah_kosong", "bayar", "lunas",
+                  "status_verifikasi", "disetujui_bos", "jarak_m", "akurasi_m", "harga_berlaku", "total", "dicatat_offline", "disimulasikan"]
+        for x in await d.sales.find(rentang).sort([("urutan_at", 1), ("baris_ke", 1)]).to_list(None):
             baris.append([waktu_csv(x["urutan_at"]), sel_teks(nk(x["kurir_id"])), sel_teks(x["nama_pelanggan"]), x["jenis"],
+                          sel_teks(x.get("nama_produk", "Isi ulang galon")), sel_teks(x.get("satuan", "galon")),
                           sel_angka(x["galon_isi"]), sel_angka(x["galon_kosong"]), x["bayar"], "ya" if x.get("lunas") else "tidak",
                           x["status_verifikasi"], "ya" if x.get("disetujui_bos") else "tidak", sel_angka(x.get("jarak_m")),
                           sel_angka(x.get("akurasi_m")), sel_angka(x["harga_berlaku"]), sel_angka(x["galon_isi"] * x["harga_berlaku"]),
                           "ya" if x.get("dicatat_offline") else "tidak", "ya" if x.get("disimulasikan") else "tidak"])
     elif jenis == "rit":
         kepala = ["tanggal", "kurir", "berangkat", "dibawa", "muatan_dicek", "terjual_catatan", "isi_pulang", "kosong_pulang",
-                  "selisih_galon", "uang_seharusnya", "uang_disetor", "selisih_uang", "status"]
+                  "selisih_galon", "uang_seharusnya", "uang_disetor", "selisih_uang", "status", "kosong_catatan", "selisih_kosong", "produk_lain"]
         trips = await d.trips.find(rentang).sort("berangkat_at", 1).to_list(None)
         sales = await d.sales.find({"depot_id": depot["_id"], "trip_id": {"$in": [t["_id"] for t in trips]}}).to_list(None)
         for t in trips:
@@ -74,12 +75,21 @@ async def unduh_csv(jenis: Literal["penjualan", "rit", "tanda", "audit"] = "penj
             baris.append([t["tanggal"], sel_teks(nk(t["kurir_id"])), waktu_csv(t["berangkat_at"]), sel_angka(t["dibawa"]),
                           "ya" if t.get("muatan_dicek") else "tidak", sel_angka(st["galon_catatan"]), sel_angka(t.get("isi_pulang")),
                           sel_angka(t.get("kosong_pulang")), sel_angka(st["selisih_galon"]), sel_angka(st["uang_seharusnya"]),
-                          sel_angka(t.get("uang_disetor")), sel_angka(st["selisih_uang"]), t["status"]])
+                          sel_angka(t.get("uang_disetor")), sel_angka(st["selisih_uang"]), t["status"], sel_angka(st["kosong_catatan"]),
+                          sel_angka(st["selisih_kosong"]),
+                          sel_teks(" | ".join(f"{p['nama']}: bawa {p['dibawa']}, catatan {p['terjual_catatan']}, pulang {p['isi_pulang']}"
+                                              for p in st["produk_lain"]))])
     elif jenis == "tanda":
         kepala = ["tanggal", "kurir", "kode", "penjelasan", "perkiraan_rupiah", "masuk_ke", "status"]
         for f in await d.flags.find(rentang).sort([("tanggal", 1), ("kode", 1)]).to_list(None):
             baris.append([f["tanggal"], sel_teks(nk(f["kurir_id"])), f["kode"], sel_teks(f["penjelasan"]), sel_angka(f["perkiraan_rupiah"]),
                           f["masuk_ke"] or "", f["status"]])
+    elif jenis == "depot":
+        kepala = ["waktu", "produk", "jumlah", "satuan", "harga", "total", "dicatat_oleh", "batal", "alasan_batal"]
+        for x in await d.depot_sales.find(rentang).sort("created_at", 1).to_list(None):
+            baris.append([waktu_csv(x["created_at"]), sel_teks(x["nama_produk"]), sel_angka(x["jumlah"]), sel_teks(x["satuan"]),
+                          sel_angka(x["harga"]), sel_angka(x["total"]), sel_teks(x["nama_pengguna"]), "ya" if x.get("batal") else "tidak",
+                          sel_teks(x.get("alasan_batal"))])
     else:
         kepala = ["waktu", "pengguna", "aksi", "sebelum", "sesudah", "alasan"]
         awal = A.geser_tanggal(dari, 0)
@@ -143,7 +153,8 @@ def periode_lalu() -> tuple[str, str]:
 
 async def galon_toko_periode(depot_id: str, mulai: str, selesai: str) -> dict[str, int]:
     hasil: dict[str, int] = {}
-    async for x in db().sales.find({"depot_id": depot_id, "jenis": "toko", "tanggal": {"$gte": mulai, "$lte": selesai}}, {"customer_id": 1, "galon_isi": 1}):
+    async for x in db().sales.find({"depot_id": depot_id, "jenis": "toko", "produk_id": {"$in": [None, A.UTAMA]},
+                                    "tanggal": {"$gte": mulai, "$lte": selesai}}, {"customer_id": 1, "galon_isi": 1}):
         hasil[x["customer_id"]] = hasil.get(x["customer_id"], 0) + x["galon_isi"]
     return hasil
 

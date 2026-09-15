@@ -13,6 +13,7 @@ from . import aturan as A
 from .inti import ambil_milik_depot, bersih, catat_audit, db, galat, id_baru, jam_wib, penanda_demo, sekarang, tanggal_wib
 from .keamanan import hash_rahasia, normal_hp, sesi_bos
 from .layanan import dasbor, hitung_ulang, kelompok_radar, nama_kurir
+from .produk import ambil_produk, muatan_awal
 
 router = APIRouter(prefix="/bos")
 
@@ -86,9 +87,15 @@ async def detail_rit(trip_id: str, s: dict = Depends(sesi_bos)):
             "tanda": tanda[0] if tanda else None, "titik_toko": [{"id": t["_id"], "nama": t["nama"], "lat": t["lat"], "lng": t["lng"]} for t in toko]}
 
 
+class MuatanLainBos(BaseModel):
+    produk_id: str = Field(min_length=1, max_length=64)
+    dibawa: int = Field(ge=0, le=500)
+
+
 class Muatan(BaseModel):
-    dibawa: int | None = Field(None, ge=1, le=500)
+    dibawa: int | None = Field(None, ge=0, le=500)
     alasan: str = Field("", max_length=300)
+    muatan_lain: list[MuatanLainBos] | None = Field(None, max_length=20)
 
 
 @router.post("/rit/{trip_id}/muatan")
@@ -97,12 +104,33 @@ async def cek_muatan(trip_id: str, b: Muatan, s: dict = Depends(sesi_bos)):
     trip = await ambil_milik_depot("trips", trip_id, depot["_id"], "Rit tidak ditemukan.")
     kurir = (await nama_kurir(depot["_id"])).get(trip["kurir_id"], {}).get("nama", "kurir")
     dibawa = trip["dibawa"] if b.dibawa is None else b.dibawa
-    if b.dibawa is not None and b.dibawa != trip["dibawa"] and len(b.alasan.strip()) < 3:
+    muatan = [dict(m) for m in trip.get("muatan_lain") or []]
+    sebelum, sesudah = [f"{trip['dibawa']} galon"], [f"{dibawa} galon"]
+    if b.muatan_lain is not None:
+        per = {m["produk_id"]: m for m in muatan}
+        produk = await ambil_produk(depot["_id"], {x.produk_id for x in b.muatan_lain if x.produk_id not in per}, dijual_kurir=True)
+        for x in b.muatan_lain:
+            m = per.get(x.produk_id)
+            if m is None:
+                if x.dibawa == 0:
+                    continue
+                if x.produk_id not in produk:
+                    galat(404, "Produk tidak ditemukan.")
+                m = per[x.produk_id] = {**muatan_awal(produk[x.produk_id], 0), "dibawa_kurir": 0}
+                muatan.append(m)
+            if m["dibawa"] != x.dibawa:
+                sebelum.append(f"{m['dibawa']} {m['satuan']} {m['nama']}")
+                sesudah.append(f"{x.dibawa} {m['satuan']} {m['nama']}")
+                m["dibawa"] = x.dibawa
+    berubah = dibawa != trip["dibawa"] or len(sesudah) > 1
+    if berubah and len(b.alasan.strip()) < 3:
         galat(400, "Tulis alasan perubahan muatan. Alasan masuk log audit.")
-    await db().trips.update_one({"_id": trip_id}, {"$set": {"dibawa": dibawa, "muatan_dicek": True, "muatan_dicek_oleh": s["user"]["_id"],
-                                                             "muatan_dicek_at": sekarang()}})
-    aksi = f"Muatan cocok — rit {kurir}" if dibawa == trip["dibawa"] else f"Muatan dibetulkan — rit {kurir}"
-    await catat_audit(depot, s["user"], aksi, sebelum=f"{trip['dibawa']} galon", sesudah=f"{dibawa} galon", alasan=b.alasan)
+    if dibawa == 0 and not any(m["dibawa"] for m in muatan):
+        galat(400, "Muatan tidak boleh kosong semua.")
+    await db().trips.update_one({"_id": trip_id}, {"$set": {"dibawa": dibawa, "muatan_lain": muatan, "muatan_dicek": True,
+                                                             "muatan_dicek_oleh": s["user"]["_id"], "muatan_dicek_at": sekarang()}})
+    aksi = f"Muatan dibetulkan — rit {kurir}" if berubah else f"Muatan cocok — rit {kurir}"
+    await catat_audit(depot, s["user"], aksi, sebelum=", ".join(sebelum), sesudah=", ".join(sesudah), alasan=b.alasan)
     if trip["status"] != "aktif":
         await hitung_ulang(depot, trip["tanggal"])
     return {"ok": True}
@@ -135,6 +163,7 @@ async def daftar_persetujuan(s: dict = Depends(sesi_bos)):
         x = penjualan.get(a.get("sale_id"))
         return {**bersih(a), "kurir": kurir.get(a["kurir_id"], {"nama": "Kurir"}), "pelanggan": pelanggan.get(a["customer_id"], {}).get("nama"),
                 "penjualan": None if not x else {"tanggal": x["tanggal"], "jam": jam_wib(x["urutan_at"]), "galon_isi": x["galon_isi"],
+                                                 "nama_produk": x.get("nama_produk", "Isi ulang galon"), "satuan": x.get("satuan", "galon"),
                                                  "galon_kosong": x["galon_kosong"], "status_verifikasi": x["status_verifikasi"],
                                                  "jarak_m": x.get("jarak_m"), "akurasi_m": x.get("akurasi_m"), "bayar": x["bayar"]}}
     return {"menunggu": [info(a) for a in menunggu], "sudah": [info(a) for a in sudah]}
@@ -168,13 +197,19 @@ async def putuskan(approval_id: str, b: Keputusan, s: dict = Depends(sesi_bos)):
         await d.customers.update_one({"_id": pelanggan["_id"]}, {"$set": ubah})
         sebelum, sesudah = "menunggu_persetujuan", f"{ubah['status']} · {ubah.get('jenis', pelanggan['jenis'])}"
     if a["jenis"] == "harga" and sale and b.keputusan == "setuju":
-        await d.sales.update_one({"_id": sale["_id"]}, {"$set": {"disetujui_bos": True, "harga_berlaku": sale["harga_toko"], "alasan_setuju": b.alasan}})
-        sebelum, sesudah = f"{sale['status_verifikasi']} · {A.rp(sale['harga_berlaku'])}", f"disetujui · {A.rp(sale['harga_toko'])}"
+        # Persetujuan berlaku untuk semua baris produk di kunjungan yang sama.
+        baris = await d.sales.find({"depot_id": depot["_id"], "kunjungan_id": sale["kunjungan_id"]}).to_list(None) if sale.get("kunjungan_id") else [sale]
+        disetujui = [x for x in baris if x["jenis"] == "toko" and not A.berharga_toko(x)]
+        for x in disetujui:
+            await d.sales.update_one({"_id": x["_id"]}, {"$set": {"disetujui_bos": True, "harga_berlaku": x["harga_toko"], "alasan_setuju": b.alasan}})
+        total = lambda k: sum(x["galon_isi"] * x[k] for x in disetujui)  # noqa: E731
+        sebelum, sesudah = f"{sale['status_verifikasi']} · {A.rp(total('harga_berlaku'))}", f"disetujui · {A.rp(total('harga_toko'))}"
     if a["jenis"] == "koreksi" and sale and b.keputusan == "setuju":
         baru = a["data"]
         await d.sales.update_one({"_id": sale["_id"]}, {"$set": {"galon_isi": baru["galon_isi"], "galon_kosong": baru["galon_kosong"]}})
         selisih_saldo = (baru["galon_isi"] - baru["galon_kosong"]) - (sale["galon_isi"] - sale["galon_kosong"])
-        await d.customers.update_one({"_id": sale["customer_id"]}, [{"$set": {"saldo_galon": {"$max": [0, {"$add": [{"$ifNull": ["$saldo_galon", 0]}, selisih_saldo]}]}}}])
+        if A.produk_utama(sale):
+            await d.customers.update_one({"_id": sale["customer_id"]}, [{"$set": {"saldo_galon": {"$max": [0, {"$add": [{"$ifNull": ["$saldo_galon", 0]}, selisih_saldo]}]}}}])
         sebelum = f"isi {sale['galon_isi']}, kosong {sale['galon_kosong']}"
         sesudah = f"isi {baru['galon_isi']}, kosong {baru['galon_kosong']}"
     await d.approvals.update_one({"_id": a["_id"]}, {"$set": {"status": b.keputusan, "alasan_keputusan": b.alasan, "diputuskan_at": sekarang(),
@@ -268,7 +303,8 @@ async def daftar_bon(s: dict = Depends(sesi_bos)):
     for x in sales:
         g = grup.setdefault(x["customer_id"], {"customer_id": x["customer_id"], "nama": x["nama_pelanggan"], "total": 0, "catatan": []})
         g["total"] += x["galon_isi"] * x["harga_berlaku"]
-        g["catatan"].append({"tanggal": x["tanggal"], "galon_isi": x["galon_isi"], "harga": x["harga_berlaku"]})
+        g["catatan"].append({"tanggal": x["tanggal"], "galon_isi": x["galon_isi"], "harga": x["harga_berlaku"],
+                             "nama_produk": x.get("nama_produk", "Isi ulang galon"), "satuan": x.get("satuan", "galon")})
     daftar = sorted(grup.values(), key=lambda g: -g["total"])
     return {"total": sum(g["total"] for g in daftar), "pelanggan": daftar}
 
@@ -365,12 +401,14 @@ class Pengaturan(BaseModel):
     radius_m: int = Field(ge=10, le=2000)
     garis_dasar_toko: int = Field(ge=0, le=100)
     kebijakan_tanpa_bukti: bool
+    nilai_galon_kosong: int = Field(0, ge=0, le=1_000_000)
 
 
 @router.get("/pengaturan")
 async def lihat_pengaturan(s: dict = Depends(sesi_bos)):
     dp = s["depot"]
-    return {k: dp.get(k) for k in Pengaturan.model_fields} | {"is_demo": dp.get("is_demo", False)}
+    return {k: dp.get(k) for k in Pengaturan.model_fields} | {"nilai_galon_kosong": dp.get("nilai_galon_kosong", 0),
+                                                             "is_demo": dp.get("is_demo", False)}
 
 
 @router.put("/pengaturan")

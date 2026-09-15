@@ -69,6 +69,8 @@ async def dasbor(depot: dict) -> dict:
     sales = await d.sales.find({"depot_id": depot_id, "tanggal": {"$gte": A.geser_tanggal(dari, -A.R1_JENDELA_HARI), "$lte": hari_ini}}).to_list(None)
     flags = await d.flags.find({"depot_id": depot_id, "tanggal": {"$gte": dari, "$lte": hari_ini}}).to_list(None)
     trips_hari_ini = await d.trips.find({"depot_id": depot_id, "tanggal": hari_ini}).to_list(None)
+    rit_lama = await d.trips.find({"depot_id": depot_id, "status": "aktif", "tanggal": {"$lt": hari_ini}}).sort("tanggal", 1).to_list(None)
+    jual_depot = await d.depot_sales.find({"depot_id": depot_id, "tanggal": hari_ini, "batal": {"$ne": True}}).to_list(None)
     kurir = await nama_kurir(depot_id)
     harian = A.statistik_harian(sales)
     tanggal = A.daftar_tanggal(dari, hari_ini)
@@ -116,6 +118,12 @@ async def dasbor(depot: dict) -> dict:
             disetor += t.get("uang_disetor") or 0
     flag_hari_ini = [f for f in flags if f["tanggal"] == hari_ini]
     semua_hari_ini = {"total": 0, "toko": 0, "rumah": 0}
+    produk_lain: dict[str, dict] = {}
+    for s in sales:
+        if s["tanggal"] == hari_ini and not A.produk_utama(s):
+            p = produk_lain.setdefault(s["produk_id"], {"nama": s.get("nama_produk"), "satuan": s.get("satuan"), "jumlah": 0, "uang": 0})
+            p["jumlah"] += s["galon_isi"]
+            p["uang"] += s["galon_isi"] * s["harga_berlaku"]
     for (_, t), v in harian.items():
         if t == hari_ini:
             for k in semua_hari_ini:
@@ -144,7 +152,11 @@ async def dasbor(depot: dict) -> dict:
             "tanggal": hari_ini, **semua_hari_ini, "uang_seharusnya": seharusnya, "uang_disetor": disetor, "rit_di_jalan": di_jalan,
             **A.dua_angka(flag_hari_ini), "tanda_baru": sum(1 for f in flag_hari_ini if f["status"] == "baru"),
             "rit_belum_dicek": sum(1 for t in trips_hari_ini if not t.get("muatan_dicek")),
+            "produk_lain": sorted(produk_lain.values(), key=lambda p: -p["uang"]),
+            "uang_depot": sum(x["total"] for x in jual_depot), "transaksi_depot": len(jual_depot),
         },
+        "rit_belum_ditutup": [{"id": t["_id"], "tanggal": t["tanggal"], "kurir": kurir.get(t["kurir_id"], {"id": t["kurir_id"], "nama": "Kurir"})}
+                              for t in rit_lama],
         "kurir": kartu,
         "tren": {"tanggal": tanggal, "garis_dasar": [A.garis_dasar(t, harian, depot.get("garis_dasar_toko", 50)) for t in tanggal],
                  "seri": [{"kurir": k["kurir"], "porsi": [(harian[(k["kurir"]["id"], t)]["toko"] / harian[(k["kurir"]["id"], t)]["total"])

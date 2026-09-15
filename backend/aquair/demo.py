@@ -14,6 +14,7 @@ from datetime import date, datetime, time, timedelta, timezone
 from . import aturan as A
 from .inti import WIB, db, id_baru, sekarang, tanggal_wib
 from .layanan import hitung_ulang
+from .produk import muatan_awal
 
 PUSAT = (-6.1754, 106.8272)  # titik pusat kelurahan fiktif
 NAMA_TOKO = ["Toko Sumber Rejeki", "Toko Maju Jaya", "Warung Barokah", "Toko Sinar Harapan", "Toko Makmur", "Warung Pojok",
@@ -24,6 +25,10 @@ NAMA_RUMAH = ["Bu Sari", "Pak Anton", "Bu Rina", "Pak Budi", "Bu Wati", "Pak Jok
               "Pak Agus", "Bu Dewi", "Pak Slamet", "Bu Nur", "Pak Bambang", "Bu Tuti", "Pak Eko", "Bu Ratna", "Pak Hadi",
               "Bu Sri", "Pak Imam", "Bu Fitri", "Pak Rahmat", "Bu Indah", "Pak Yanto", "Bu Lestari", "Pak Darto", "Bu Ani",
               "Pak Wahyu", "Bu Endang", "Pak Gunawan"]
+# Produk contoh selain isi ulang galon: (nama, kategori, satuan, harga rumah, harga toko, dijual kurir, dijual depot, pakai kosong).
+PRODUK_CONTOH = [("LPG 3 kg", "lpg", "tabung", 22000, 21000, True, False, True),
+                 ("Air galon bermerek", "air_kemasan", "galon", 21000, None, True, False, True),
+                 ("Isi wadah kecil", "wadah_kecil", "wadah", 2000, None, False, True, False)]
 HARI_KURANG_SETOR_RUDI = {3, 8, 13, 17}
 RUMAH_MACET = {12, 20, 40, 45}
 RUMAH_BOLEH_BON = {0, 5, 9}
@@ -50,6 +55,10 @@ class Pembuat:
                       "is_demo": True, "ringkasan_ai_sisa": 3, "created_at": self.kini, "kedaluwarsa_at": self.kedaluwarsa}
         self.tanda = {"depot_id": self.depot["_id"], "kedaluwarsa_at": self.kedaluwarsa}
         self.sales, self.trips, self.approvals, self.confirmations = [], [], [], []
+        self.produk = [{"_id": id_baru(), "nama": n, "kategori": k, "satuan": sat, "harga_rumah": rumah, "harga_toko": toko, "dijual_kurir": kurir,
+                        "dijual_depot": depot, "pakai_kosong": kosong, "aktif": True, "created_at": self.kini, **self.tanda}
+                       for n, k, sat, rumah, toko, kurir, depot, kosong in PRODUK_CONTOH]
+        self.lpg, self.bermerek, self.wadah = self.produk
 
     def t(self, i: int) -> str:
         return A.geser_tanggal(self.hari_ini, i - 29)
@@ -122,25 +131,49 @@ class Pembuat:
         self.sales.append(s)
         return s
 
-    def rit(self, kurir, i, rencana, *, disetor_fn=None, status="diterima", dibawa=40, isi_pulang=None, cek="06.40"):
-        """isi_pulang=None berarti galon pulang cocok dengan catatan (tanpa R7)."""
+    def jual_produk(self, kurir, trip, tanggal, menit, c, p, jumlah, kosong):
+        """Penjualan produk selain isi ulang galon ke rumah (tidak mengubah saldo galon pinjaman)."""
+        harga, harga_toko, harga_rumah = A.harga_produk(c["jenis"], A.RUMAH, self.depot, p)
+        dibuat = waktu(tanggal, menit)
+        dx, dy = self.rng.uniform(-10, 10), self.rng.uniform(-10, 10)
+        s = {"_id": id_baru(), "trip_id": trip["_id"], "kurir_id": kurir["_id"], "customer_id": c["_id"], "nama_pelanggan": c["nama"],
+             "jenis": c["jenis"], "produk_id": p["_id"], "nama_produk": p["nama"], "satuan": p["satuan"], "galon_isi": jumlah,
+             "galon_kosong": kosong if p["pakai_kosong"] else 0, "bayar": "tunai", "lunas": True, "harga_berlaku": harga,
+             "harga_toko": harga_toko, "harga_rumah": harga_rumah, "status_verifikasi": A.RUMAH,
+             "lat": c["lat"] + dy / 111320, "lng": c["lng"] + dx / (111320 * math.cos(math.radians(c["lat"]))), "akurasi_m": 15,
+             "jarak_m": None, "qr_dipindai": False, "disimulasikan": True, "dicatat_offline": False, "client_id": None,
+             "baris_ke": 0, "disetujui_bos": False, "created_at": dibuat, "urutan_at": dibuat, "tanggal": tanggal, **self.tanda}
+        self.sales.append(s)
+        return s
+
+    def rit(self, kurir, i, rencana, *, disetor_fn=None, status="diterima", dibawa=40, isi_pulang=None, cek="06.40", lain=None,
+            muatan_lain=None):
+        """isi_pulang=None berarti galon pulang cocok dengan catatan (tanpa R7). lain = [(pelanggan, produk, jumlah, kosong)]."""
         tanggal = self.t(i)
         jam, menit = map(int, cek.split("."))
         dibawa = max(dibawa, sum(g for _, g, _, _ in rencana))
         trip = {"_id": id_baru(), "kurir_id": kurir["_id"], "dibawa": dibawa, "dibawa_kurir": dibawa, "muatan_dicek": True,
                 "muatan_dicek_oleh": self.bos["_id"], "muatan_dicek_at": waktu(tanggal, jam * 60 + menit),
                 "berangkat_at": waktu(tanggal, jam * 60 + menit - 10), "tanggal": tanggal, "status": status,
-                "isi_pulang": None, "kosong_pulang": None, "uang_disetor": None, "selesai_at": None, **self.tanda}
+                "isi_pulang": None, "kosong_pulang": None, "uang_disetor": None, "selesai_at": None,
+                "muatan_lain": [muatan_awal(p, n) for p, n in muatan_lain or []], **self.tanda}
         m = jam * 60 + menit + self.rng.randint(15, 25)
         penjualan = []
         self.rng.shuffle(rencana)
         for c, galon, st, bayar in rencana:
             penjualan.append(self.jual(kurir, trip, tanggal, m, c, galon, st, bayar))
             m += self.rng.randint(7, 16)
+        for c, p, jumlah, kosong in lain or []:
+            penjualan.append(self.jual_produk(kurir, trip, tanggal, m, c, p, jumlah, kosong))
+            m += self.rng.randint(7, 16)
         if status != "aktif":
+            for mm in trip["muatan_lain"]:
+                milik = [s for s in penjualan if s.get("produk_id") == mm["produk_id"]]
+                mm.update(isi_pulang=mm["dibawa"] - sum(s["galon_isi"] for s in milik),
+                          kosong_pulang=sum(s["galon_kosong"] for s in milik) if mm["pakai_kosong"] else None)
             setoran = A.hitung_setoran(trip, penjualan)
             isi_pulang = dibawa - setoran["galon_catatan"] if isi_pulang is None else isi_pulang
-            trip.update(isi_pulang=isi_pulang, kosong_pulang=sum(s["galon_kosong"] for s in penjualan),
+            trip.update(isi_pulang=isi_pulang, kosong_pulang=setoran["kosong_catatan"],
                         uang_disetor=disetor_fn(penjualan, setoran) if disetor_fn else setoran["uang_seharusnya"],
                         selesai_at=waktu(tanggal, m + 20))
             trip.update(uang_seharusnya=setoran["uang_seharusnya"], selisih_uang=trip["uang_disetor"] - setoran["uang_seharusnya"],
@@ -224,8 +257,13 @@ class Pembuat:
         if lemah:
             rencana.append((self.toko[12], lemah, A.LOKASI_LEMAH, "tunai"))
         rencana += self.rencana_rumah(self.dimas, i, total - toko)
+        lain = muatan = None
+        if i == 29:
+            pool = self.rumah_rute(self.dimas, i)
+            lain = [(pool[3], self.lpg, 1, 1), (pool[8], self.lpg, 1, 1), (pool[14], self.bermerek, 1, 1)]
+            muatan = [(self.lpg, 4), (self.bermerek, 2)]
         # Hari 11: satu galon pecah di jalan → stok berkurang 40, catatan 39 (R7, nanti ditandai aman).
-        return self.rit(self.dimas, i, rencana, status=status, cek="06.30", isi_pulang=0 if i == 11 else None)
+        return self.rit(self.dimas, i, rencana, status=status, cek="06.30", isi_pulang=0 if i == 11 else None, lain=lain, muatan_lain=muatan)
 
     def hari_ini_rudi(self):
         toko = self.toko
@@ -235,7 +273,7 @@ class Pembuat:
         trip = {"_id": id_baru(), "kurir_id": self.rudi["_id"], "dibawa": 40, "dibawa_kurir": 40, "muatan_dicek": True,
                 "muatan_dicek_oleh": self.bos["_id"], "muatan_dicek_at": waktu(tanggal, 425), "berangkat_at": waktu(tanggal, 415),
                 "tanggal": tanggal, "status": "aktif", "isi_pulang": None, "kosong_pulang": None, "uang_disetor": None,
-                "selesai_at": None, **self.tanda}
+                "selesai_at": None, "muatan_lain": [muatan_awal(self.lpg, 3), muatan_awal(self.bermerek, 2)], **self.tanda}
         for c, g, st, bayar in rencana:
             self.jual(self.rudi, trip, tanggal, m, c, g, st, bayar)
             m += self.rng.randint(9, 16)
@@ -295,6 +333,15 @@ class Pembuat:
                                        {"kode": "tutup_bermerek", "teks": "Tidak memakai tutup bermerek", "ok": False},
                                        {"kode": "air_baku", "teks": "Sumber air baku berizin", "ok": True}], **self.tanda}
 
+    def penjualan_depot(self):
+        """Empat pembeli datang ke depot beberapa jam sebelum demo dibuat, tetap di tanggal hari ini (tidak pernah di masa depan)."""
+        awal_hari = waktu(self.hari_ini, 1)
+        self.depot_sales = [{"_id": id_baru(), "produk_id": self.wadah["_id"], "nama_produk": self.wadah["nama"], "satuan": self.wadah["satuan"],
+                             "jumlah": n, "harga": self.wadah["harga_rumah"], "total": n * self.wadah["harga_rumah"], "bayar": "tunai",
+                             "batal": False, "dicatat_oleh": self.bos["_id"], "nama_pengguna": self.bos["nama"],
+                             "created_at": max(awal_hari, self.kini - timedelta(minutes=lalu)), "tanggal": self.hari_ini, **self.tanda}
+                            for n, lalu in ((2, 260), (1, 180), (3, 95), (1, 30))]
+
     async def simpan(self) -> dict:
         self.buat_pengguna()
         self.buat_pelanggan()
@@ -309,6 +356,7 @@ class Pembuat:
         self.persetujuan(rit_dimas_kemarin)
         self.konfirmasi()
         self.perawatan()
+        self.penjualan_depot()
         d = db()
         await d.depots.insert_one(self.depot)
         await d.users.insert_many(self.users)
@@ -318,6 +366,8 @@ class Pembuat:
         await d.approvals.insert_many(self.approvals)
         if self.confirmations:
             await d.confirmations.insert_many(self.confirmations)
+        await d.products.insert_many(self.produk)
+        await d.depot_sales.insert_many(self.depot_sales)
         await d.maintenance.insert_many(self.maintenance)
         await d.compliance.insert_one(self.compliance)
         await hitung_ulang(self.depot, self.t(0))
