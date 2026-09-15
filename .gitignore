@@ -8,3 +8,6 @@ __pycache__/
 build/
 dist/
 .DS_Store
+backend/.pytest_cache/
+frontend/build/
+*.log
