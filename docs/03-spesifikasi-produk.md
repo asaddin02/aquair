@@ -253,9 +253,17 @@ Contoh satu kelompok di Radar:
   yang dipakai R1, R3, R8, statistik porsi toko, dan saldo galon pinjaman.
 - Bos bisa menambah produk lain: nama, jenis (isi ulang lain, isi wadah kecil, galon baru,
   air kemasan bermerek, LPG, lainnya), satuan, **harga rumah**, **harga toko (opsional)**,
-  sakelar **dijual lewat kurir**, **dijual di depot**, **ada tukar kosong**, dan aktif.
+  **harga beli / modal (opsional)**, sakelar **dijual lewat kurir**, **dijual di depot**,
+  **ada tukar kosong**, dan aktif.
 - Harga toko harus lebih murah dari harga rumah, atau dikosongkan bila produk hanya punya satu
   harga. Aturan "harga toko wajib punya bukti" berlaku untuk semua produk.
+- **Harga beli** hanya untuk barang dagangan yang dibeli jadi (LPG, air kemasan bermerek, galon
+  baru). Harus lebih murah dari harga jual. Isi ulang galon dan produk hasil produksi depot
+  sendiri dikosongkan, karena modalnya berupa listrik, filter, dan air baku yang tercatat
+  sebagai pengeluaran di buku kas.
+- Setiap baris penjualan menyimpan **salinan harga beli saat transaksi** (`sales.harga_beli`,
+  `depot_sales.harga_beli`). Perubahan harga beli hari ini tidak pernah mengubah untung
+  catatan lama.
 - Produk tidak dihapus, hanya dinonaktifkan, supaya catatan lama tetap utuh. Perubahan harga
   berlaku untuk penjualan berikutnya dan tercatat di `audit_log`.
 - Air kemasan bermerek dijual tersegel sebagai barang dagangan. Depot tetap dilarang mengisi
@@ -269,7 +277,39 @@ Contoh satu kelompok di Radar:
   dan tercatat di `audit_log`.
 - Total hari ini tampil di dasbor dan bisa diunduh sebagai CSV.
 
-### 6.3 Data lain
+### 6.3 Untung & pengeluaran (buku kas)
+- Menjawab satu pertanyaan pemilik depot: **"bulan ini saya untung berapa?"** Isinya buku kas
+  sederhana, bukan akuntansi lengkap: tidak ada jurnal, neraca, penyusutan, atau pajak.
+- Dasarnya **uang yang benar-benar berpindah**, bukan akrual:
+  - **Uang masuk** = penjualan tunai lewat kurir + penjualan di depot + bon yang **dilunasi**
+    pada periode itu (dihitung pada tanggal pelunasan, bukan tanggal penjualan).
+  - **Uang keluar** = pengeluaran yang dicatat bos.
+  - **Untung = uang masuk − uang keluar.** Bila negatif, ditulis "Rugi".
+- Bon yang belum dibayar tidak pernah ikut dihitung; jumlahnya ditampilkan sebagai catatan
+  kecil dengan tautan ke Bon belum lunas, supaya angkanya sama dengan isi laci depot.
+- **Periode:** Hari ini, 7 hari, Bulan ini (tanggal 1 sampai hari ini), dan Pilih tanggal
+  (paling panjang satu tahun). Semua tanggal memakai hari kalender WIB.
+- **Pengeluaran** dicatat bos: kategori tetap (air baku & bahan, listrik & air, gaji & upah,
+  galon/tutup/segel, perawatan & suku cadang, BBM & kendaraan, sewa tempat, lain-lain),
+  keterangan, jumlah Rupiah, dan tanggal (tidak boleh di masa depan). Mencatat dan menghapus
+  tercatat di `audit_log`; pengeluaran bisa dihapus karena sifatnya catatan bos sendiri.
+- **Tampilan:** tiga angka besar (uang masuk, uang keluar, untung), rincian uang masuk per
+  sumber, pengeluaran per kategori, tabel untung per hari, dan daftar catatan pengeluaran.
+- Selisih setoran kurir **tidak** diperhitungkan di sini; itu urusan Radar (R6). Buku kas
+  memakai catatan penjualan, bukan uang yang diserahkan kurir.
+- Bisa diunduh sebagai CSV (jenis **Pengeluaran**).
+
+**Untung kotor per produk.** Panel terpisah di halaman yang sama, menjawab "produk mana yang
+paling menguntungkan":
+- Dihitung dari barang yang **terjual** pada periode itu (lewat kurir maupun di depot,
+  termasuk yang dibon) dikali selisih harga jual dan salinan harga beli tiap baris.
+- Produk tanpa harga beli — termasuk isi ulang galon — hanya menampilkan omzet, dengan ajakan
+  mengisi harga beli. Untung kotornya tidak ditebak.
+- **Angka ini tidak boleh dijumlahkan dengan untung bersih buku kas**, karena modal barang
+  sudah ikut tercatat sebagai pengeluaran saat stoknya dibeli. Aturannya sama dengan Tagihan
+  kembali dan Perkiraan bocor di bagian 4.1: dua angka berbeda, ditampilkan terpisah.
+
+### 6.4 Data lain
 - **Pelanggan:**
   - nama, jenis (toko/rumah), nomor WA (opsional), titik lokasi,
   - titik lokasi diambil dengan tombol "Pakai lokasi saya sekarang" saat berdiri di
@@ -365,15 +405,16 @@ Contoh satu kelompok di Radar:
 | Koleksi | Isi utama |
 |---|---|
 | `depots` | nama, harga_toko, harga_rumah, radius_m, garis_dasar_toko, kebijakan_tanpa_bukti, nilai_galon_kosong, is_demo |
-| `products` | depot_id, nama, kategori, satuan, harga_rumah, harga_toko, dijual_kurir, dijual_depot, pakai_kosong, aktif |
+| `products` | depot_id, nama, kategori, satuan, harga_rumah, harga_toko, harga_beli, dijual_kurir, dijual_depot, pakai_kosong, aktif |
 | `users` | depot_id, peran (`bos`/`kurir`), nama, email atau no_hp, hash kata sandi atau PIN, aktif, gagal_masuk, dikunci_sampai |
 | `customers` | depot_id, jenis, nama, no_wa, lat, lng, kapasitas, laku_per_hari, boleh_bon, qr_token, status (`aktif`/`menunggu_persetujuan`), saldo_galon |
 | `trips` | depot_id, kurir_id, dibawa, muatan_lain (per produk: produk_id, nama, satuan, harga_rumah, pakai_kosong, dibawa, isi_pulang, kosong_pulang), muatan_dicek, muatan_dicek_oleh, isi_pulang, kosong_pulang, uang_disetor, uang_seharusnya, selisih_uang, selisih_galon, status (`aktif`/`selesai`/`diterima`), berangkat_at, selesai_at |
-| `sales` | depot_id, trip_id, kurir_id, customer_id, jenis, produk_id (`utama` atau id produk), nama_produk, satuan, galon_isi dan galon_kosong (jumlah isi dan kosong untuk produk apa pun), kunjungan_id, baris_ke, bayar, lunas, harga_berlaku, status_verifikasi, lat, lng, akurasi_m, jarak_m, qr_dipindai, disimulasikan, dicatat_offline, disetujui_bos, created_at |
+| `sales` | depot_id, trip_id, kurir_id, customer_id, jenis, produk_id (`utama` atau id produk), nama_produk, satuan, galon_isi dan galon_kosong (jumlah isi dan kosong untuk produk apa pun), kunjungan_id, baris_ke, bayar, lunas, harga_berlaku, harga_beli (salinan modal saat transaksi), status_verifikasi, lat, lng, akurasi_m, jarak_m, qr_dipindai, disimulasikan, dicatat_offline, disetujui_bos, created_at |
 | `flags` | depot_id, kurir_id, trip_id, sale_id, customer_id, kode, penjelasan, perkiraan_rupiah, masuk_ke (`tagihan_kembali`/`perkiraan_bocor`/kosong), tanggal, status |
 | `confirmations` | depot_id, customer_id, periode, galon_tercatat, jawaban, galon_menurut_toko, token_hash, dijawab_at |
 | `maintenance` / `compliance` | komponen atau dokumen, tanggal_terakhir, interval_hari, berlaku_sampai |
-| `depot_sales` | depot_id, produk_id, nama_produk, satuan, jumlah, harga, total, batal, alasan_batal, dicatat_oleh, tanggal, created_at |
+| `depot_sales` | depot_id, produk_id, nama_produk, satuan, jumlah, harga, harga_beli, total, batal, alasan_batal, dicatat_oleh, tanggal, created_at |
+| `expenses` | depot_id, tanggal, kategori, nama_kategori, keterangan, jumlah, dicatat_oleh, nama_pengguna, created_at |
 | `audit_log` | depot_id, user_id, aksi, sebelum, sesudah, alasan, created_at |
 
 **Depot demo:** setiap dokumen milik depot demo punya field `kedaluwarsa_at`, dan setiap
@@ -415,11 +456,15 @@ itu:
   dengan titik lokasi dalam radius 1,5 km dari satu titik pusat kelurahan fiktif. Tiga
   rumah boleh bon. Nomor WA contoh dikosongkan.
 - **Rute:** Dimas dan Rudi masing-masing melayani 10 toko yang berbeda.
-- **Produk contoh** (harganya data contoh): LPG 3 kg (rumah Rp22.000, toko Rp21.000, tukar
-  kosong), air galon bermerek (Rp21.000, tukar kosong), dan isi wadah kecil (Rp2.000, dijual di
-  depot). Hari ini Dimas menjual 2 tabung LPG dan 1 galon bermerek ke rumah; rit aktif Rudi
+- **Produk contoh** (harganya data contoh): LPG 3 kg (rumah Rp22.000, toko Rp21.000, modal
+  Rp19.500, tukar kosong), air galon bermerek (Rp21.000, modal Rp18.000, tukar kosong), dan isi
+  wadah kecil (Rp2.000, dijual di depot, tanpa modal karena diproduksi sendiri). Hari ini Dimas menjual 2 tabung LPG dan 1 galon bermerek ke rumah; rit aktif Rudi
   membawa 3 tabung LPG dan 2 galon bermerek; ada 4 penjualan isi wadah kecil di depot. Riwayat
   30 hari Radar tidak berubah karena produk contoh.
+- **Pengeluaran contoh** selama 30 hari supaya buku kas tidak kosong: sewa tempat, tagihan
+  listrik, upah mingguan kurir, air baku tiap beberapa hari, galon dan tutup, ganti filter,
+  serta bensin tiap tiga hari termasuk hari ini. Jumlahnya dibuat agar depot contoh tampak
+  untung wajar, bukan rugi.
 - **Riwayat 30 hari yang berakhir hari ini**, dihitung saat depot demo dibuat. Jadi
   dasbor tidak pernah kosong atau basi.
 - **Tanda Radar dihasilkan oleh mesin Radar yang sama** dari penjualan contoh, bukan

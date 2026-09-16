@@ -5,6 +5,7 @@ import './fonts.css';
 import './gaya.css';
 import './tampilan.css';
 import './pengalaman.css';
+import './cerah.css';
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>

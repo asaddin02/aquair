@@ -108,7 +108,7 @@ export function Stepper({ label, nilai, onUbah, min = 0, max = 500, hint }) {
   );
 }
 
-export function Modal({ judul, onTutup, children }) {
+export function Modal({ judul, onTutup, children, className = '' }) {
   const kotak = useRef(null);
   const tutup = useRef(onTutup);
   tutup.current = onTutup;
@@ -132,7 +132,7 @@ export function Modal({ judul, onTutup, children }) {
     return () => { document.removeEventListener('keydown', tekan); document.body.style.overflow = overflowSebelum; sebelum?.focus?.(); };
   }, []);
   return (
-    <div className="modal-back" onMouseDown={(e) => e.target === e.currentTarget && onTutup()}>
+    <div className={`modal-back ${className}`} onMouseDown={(e) => e.target === e.currentTarget && onTutup()}>
       <div className="modal" role="dialog" aria-modal="true" aria-label={judul} ref={kotak} tabIndex={-1}>
         {judul && <h3 style={{ marginBottom: 10 }}>{judul}</h3>}
         {children}

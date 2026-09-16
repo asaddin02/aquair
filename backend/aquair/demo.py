@@ -12,6 +12,7 @@ import secrets
 from datetime import date, datetime, time, timedelta, timezone
 
 from . import aturan as A
+from .api_keuangan import NAMA_KATEGORI
 from .inti import WIB, db, id_baru, sekarang, tanggal_wib
 from .layanan import hitung_ulang
 from .produk import muatan_awal
@@ -25,10 +26,21 @@ NAMA_RUMAH = ["Bu Sari", "Pak Anton", "Bu Rina", "Pak Budi", "Bu Wati", "Pak Jok
               "Pak Agus", "Bu Dewi", "Pak Slamet", "Bu Nur", "Pak Bambang", "Bu Tuti", "Pak Eko", "Bu Ratna", "Pak Hadi",
               "Bu Sri", "Pak Imam", "Bu Fitri", "Pak Rahmat", "Bu Indah", "Pak Yanto", "Bu Lestari", "Pak Darto", "Bu Ani",
               "Pak Wahyu", "Bu Endang", "Pak Gunawan"]
-# Produk contoh selain isi ulang galon: (nama, kategori, satuan, harga rumah, harga toko, dijual kurir, dijual depot, pakai kosong).
-PRODUK_CONTOH = [("LPG 3 kg", "lpg", "tabung", 22000, 21000, True, False, True),
-                 ("Air galon bermerek", "air_kemasan", "galon", 21000, None, True, False, True),
-                 ("Isi wadah kecil", "wadah_kecil", "wadah", 2000, None, False, True, False)]
+# Produk contoh selain isi ulang galon: (nama, kategori, satuan, harga rumah, harga toko, dijual kurir, dijual depot,
+# pakai kosong, harga beli). Harga beli hanya untuk barang dagangan; isi wadah kecil diproduksi depot sendiri.
+PRODUK_CONTOH = [("LPG 3 kg", "lpg", "tabung", 22000, 21000, True, False, True, 19500),
+                 ("Air galon bermerek", "air_kemasan", "galon", 21000, None, True, False, True, 18000),
+                 ("Isi wadah kecil", "wadah_kecil", "wadah", 2000, None, False, True, False, None)]
+# Pengeluaran contoh: (kategori, keterangan, rupiah, hari ke-berapa dalam 30 hari, menit pencatatan).
+PENGELUARAN_CONTOH = [("sewa", "Sewa tempat depot", 800_000, [2], 540),
+                      ("listrik", "Tagihan listrik dan air", 485_000, [5], 600),
+                      ("gaji", "Upah mingguan kurir", 500_000, [4, 11, 18, 25], 1020),
+                      ("bahan", "Beli air baku satu tangki", 200_000, [1, 7, 13, 19, 24, 28], 480),
+                      ("galon", "Beli galon kosong dan tutup", 600_000, [9], 555),
+                      ("galon", "Tambah tutup dan tisu segel", 350_000, [21], 555),
+                      ("perawatan", "Ganti filter sedimen", 350_000, [16], 630),
+                      ("transport", "Isi bensin motor antar", 50_000, [0, 3, 6, 9, 12, 15, 18, 21, 24, 27], 450),
+                      ("transport", "Isi bensin motor antar", 55_000, [29], 450)]
 HARI_KURANG_SETOR_RUDI = {3, 8, 13, 17}
 RUMAH_MACET = {12, 20, 40, 45}
 RUMAH_BOLEH_BON = {0, 5, 9}
@@ -55,9 +67,10 @@ class Pembuat:
                       "is_demo": True, "ringkasan_ai_sisa": 3, "created_at": self.kini, "kedaluwarsa_at": self.kedaluwarsa}
         self.tanda = {"depot_id": self.depot["_id"], "kedaluwarsa_at": self.kedaluwarsa}
         self.sales, self.trips, self.approvals, self.confirmations = [], [], [], []
-        self.produk = [{"_id": id_baru(), "nama": n, "kategori": k, "satuan": sat, "harga_rumah": rumah, "harga_toko": toko, "dijual_kurir": kurir,
-                        "dijual_depot": depot, "pakai_kosong": kosong, "aktif": True, "created_at": self.kini, **self.tanda}
-                       for n, k, sat, rumah, toko, kurir, depot, kosong in PRODUK_CONTOH]
+        self.produk = [{"_id": id_baru(), "nama": n, "kategori": k, "satuan": sat, "harga_rumah": rumah, "harga_toko": toko,
+                        "harga_beli": beli, "dijual_kurir": kurir, "dijual_depot": depot, "pakai_kosong": kosong, "aktif": True,
+                        "created_at": self.kini, **self.tanda}
+                       for n, k, sat, rumah, toko, kurir, depot, kosong, beli in PRODUK_CONTOH]
         self.lpg, self.bermerek, self.wadah = self.produk
 
     def t(self, i: int) -> str:
@@ -139,7 +152,7 @@ class Pembuat:
         s = {"_id": id_baru(), "trip_id": trip["_id"], "kurir_id": kurir["_id"], "customer_id": c["_id"], "nama_pelanggan": c["nama"],
              "jenis": c["jenis"], "produk_id": p["_id"], "nama_produk": p["nama"], "satuan": p["satuan"], "galon_isi": jumlah,
              "galon_kosong": kosong if p["pakai_kosong"] else 0, "bayar": "tunai", "lunas": True, "harga_berlaku": harga,
-             "harga_toko": harga_toko, "harga_rumah": harga_rumah, "status_verifikasi": A.RUMAH,
+             "harga_toko": harga_toko, "harga_rumah": harga_rumah, "harga_beli": p.get("harga_beli"), "status_verifikasi": A.RUMAH,
              "lat": c["lat"] + dy / 111320, "lng": c["lng"] + dx / (111320 * math.cos(math.radians(c["lat"]))), "akurasi_m": 15,
              "jarak_m": None, "qr_dipindai": False, "disimulasikan": True, "dicatat_offline": False, "client_id": None,
              "baris_ke": 0, "disetujui_bos": False, "created_at": dibuat, "urutan_at": dibuat, "tanggal": tanggal, **self.tanda}
@@ -337,10 +350,21 @@ class Pembuat:
         """Empat pembeli datang ke depot beberapa jam sebelum demo dibuat, tetap di tanggal hari ini (tidak pernah di masa depan)."""
         awal_hari = waktu(self.hari_ini, 1)
         self.depot_sales = [{"_id": id_baru(), "produk_id": self.wadah["_id"], "nama_produk": self.wadah["nama"], "satuan": self.wadah["satuan"],
-                             "jumlah": n, "harga": self.wadah["harga_rumah"], "total": n * self.wadah["harga_rumah"], "bayar": "tunai",
+                             "jumlah": n, "harga": self.wadah["harga_rumah"], "harga_beli": self.wadah.get("harga_beli"),
+                             "total": n * self.wadah["harga_rumah"], "bayar": "tunai",
                              "batal": False, "dicatat_oleh": self.bos["_id"], "nama_pengguna": self.bos["nama"],
                              "created_at": max(awal_hari, self.kini - timedelta(minutes=lalu)), "tanggal": self.hari_ini, **self.tanda}
                             for n, lalu in ((2, 260), (1, 180), (3, 95), (1, 30))]
+
+    def pengeluaran(self):
+        """Buku kas contoh: pengeluaran rutin depot selama 30 hari (spesifikasi 6.3)."""
+        self.expenses = []
+        for kategori, keterangan, jumlah, hari, menit in PENGELUARAN_CONTOH:
+            for i in hari:
+                tanggal = self.t(i)
+                self.expenses.append({"_id": id_baru(), "tanggal": tanggal, "kategori": kategori, "nama_kategori": NAMA_KATEGORI[kategori],
+                                      "keterangan": keterangan, "jumlah": jumlah, "dicatat_oleh": self.bos["_id"],
+                                      "nama_pengguna": self.bos["nama"], "created_at": min(waktu(tanggal, menit), self.kini), **self.tanda})
 
     async def simpan(self) -> dict:
         self.buat_pengguna()
@@ -357,6 +381,7 @@ class Pembuat:
         self.konfirmasi()
         self.perawatan()
         self.penjualan_depot()
+        self.pengeluaran()
         d = db()
         await d.depots.insert_one(self.depot)
         await d.users.insert_many(self.users)
@@ -368,6 +393,7 @@ class Pembuat:
             await d.confirmations.insert_many(self.confirmations)
         await d.products.insert_many(self.produk)
         await d.depot_sales.insert_many(self.depot_sales)
+        await d.expenses.insert_many(self.expenses)
         await d.maintenance.insert_many(self.maintenance)
         await d.compliance.insert_one(self.compliance)
         await hitung_ulang(self.depot, self.t(0))

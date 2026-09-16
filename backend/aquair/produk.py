@@ -10,8 +10,8 @@ KATEGORI = ("isi_ulang", "wadah_kecil", "galon_baru", "air_kemasan", "lpg", "lai
 
 def info_produk_utama(depot: dict) -> dict:
     return {"id": UTAMA, "nama": "Isi ulang galon", "kategori": "isi_ulang", "satuan": "galon", "harga_rumah": depot["harga_rumah"],
-            "harga_toko": depot["harga_toko"], "dijual_kurir": True, "dijual_depot": False, "pakai_kosong": True, "aktif": True,
-            "utama": True}
+            "harga_toko": depot["harga_toko"], "harga_beli": None, "dijual_kurir": True, "dijual_depot": False, "pakai_kosong": True,
+            "aktif": True, "utama": True}
 
 
 def info_produk(p: dict) -> dict:

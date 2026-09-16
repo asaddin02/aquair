@@ -26,7 +26,9 @@ Universal Key, dan menyiapkan aplikasi untuk di-deploy sekali.
    - [ ] Masuk → **Kurir** → `kurir` / `kurir` → muncul "Halo, Rudi", dan beranda menyebut sisa LPG.
    - [ ] Jual ke toko → pilih toko → **1,2 km dari toko** → Simpan → "Tidak terverifikasi".
    - [ ] Masuk → **Bos** → `admin` / `admin` → dasbor tampil, kartu **Ringkasan AI** menghasilkan kalimat.
-   - [ ] Menu **Produk & harga** dan **Penjualan di depot** terbuka.
+   - [ ] Menu **Produk & harga**, **Penjualan di depot**, dan **Untung & pengeluaran** terbuka.
+   - [ ] Di **Untung & pengeluaran**: pilih **Bulan ini**, angka untung tampil; catat satu pengeluaran contoh, angkanya ikut berubah.
+   - [ ] Di panel **Untung kotor per produk**: LPG 3 kg punya untung kotor, Isi ulang galon hanya beromzet (tanpa modal).
    - [ ] Di Chrome HP: **⋮ → Instal aplikasi**, lalu ikon AQUAIR terbuka tanpa bilah alamat.
 7. Kalau semua baik: tekan **Submit Your App**, lalu tekan **Save to GitHub** (repo aquair, branch main).
 
@@ -48,7 +50,7 @@ Repo ini berisi aplikasi **AQUAIR** yang sudah lengkap dan lulus tes: backend Fa
 - Frontend memakai BrowserRouter: semua jalur selain `/api`, misalnya `/bos/radar` dan `/k/<token>`, harus mengembalikan `index.html`.
 
 ### 2. Buktikan tes lulus sebelum mengubah apa pun
-- Dari `backend/`: `pip install -r requirements-dev.txt`, lalu `python -m pytest -q`. Hasilnya harus **45 passed**. Tes memakai database terpisah `aquair_uji_api`.
+- Dari `backend/`: `pip install -r requirements-dev.txt`, lalu `python -m pytest -q`. Hasilnya harus **52 passed**. Tes memakai database terpisah `aquair_uji_api`.
 - Dari `frontend/`: `CI=true yarn build` harus berhasil.
 - Kalau ada yang gagal di langkah ini, **berhenti** dan laporkan galatnya. Jangan memperbaiki sebelum saya setujui.
 

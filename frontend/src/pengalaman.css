@@ -666,6 +666,8 @@
   .landing.v2 .feature-grid p, .landing.v2 .spotlight-copy p { font-size: 13px; }
 }
 @media (max-width: 380px) {
+  /* Di layar paling sempit angka Rupiah jutaan tidak muat dua kolom; satu kolom menjaga angkanya utuh. */
+  .ringkasan-grid { grid-template-columns: minmax(0,1fr); }
   .courier-workspace.v2 .k-body { padding-inline: 18px; gap: 22px; }
   .courier-workspace.v2 .k-top, .courier-workspace.v2 .courier-brand { padding-inline: 18px; }
   .cargo-dashboard { padding: 20px; }

@@ -11,6 +11,7 @@ const KETERANGAN = {
   'Radar Kecurangan': 'Kenali pola yang tidak biasa. Periksa buktinya, lalu ambil keputusan.',
   'Rit & setoran': 'Ikuti perjalanan galon dan cocokkan setiap setoran.',
   'Penjualan di depot': 'Catat pembeli yang datang langsung ke depot, dengan harga dari katalog produk.',
+  'Untung & pengeluaran': 'Uang masuk, uang keluar, dan untung depot Anda pada periode yang dipilih.',
   'Produk & harga': 'Atur produk selain isi ulang galon beserta harga rumah dan harga tokonya.',
   Pelanggan: 'Kenali pelanggan Anda, dari rumah ke rumah dan toko ke toko.',
   Persetujuan: 'Periksa pengajuan kurir dan tentukan tindak lanjutnya.',

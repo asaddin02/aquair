@@ -1,5 +1,5 @@
 /* AQUAIR service worker: aplikasi tetap terbuka saat sinyal hilang. Data API tidak pernah di-cache. */
-const VERSI = 'aquair-v4';
+const VERSI = 'aquair-v5';
 const CANGKANG = ['/', '/index.html', '/manifest.json', '/ikon-192.png', '/ikon-512.png', '/ikon-maskable-512.png', '/apple-touch-icon.png', '/favicon-32.png', '/brand/aquair-mark.png'];
 
 self.addEventListener('install', (e) => {

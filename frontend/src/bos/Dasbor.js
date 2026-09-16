@@ -160,16 +160,22 @@ export default function Dasbor() {
         </div>
       )}
       <section className="overview-masthead">
-        <div className="overview-intro"><span className="eyebrow">{tglPanjang(hi.tanggal)}</span><h2>Bagaimana depot<br />Anda hari ini?</h2><p>{hi.rit_di_jalan ? `${hi.rit_di_jalan} rit sedang berjalan. Pantau pengantaran dan tindak lanjuti yang perlu diperiksa.` : 'Semua catatan operasional Anda terhubung di sini.'}</p><Link className="btn btn-primary" to="/bos/rit">Pantau rit hari ini<Ikon n="panah" s={18} /></Link></div>
+        <div className="overview-intro"><span className="overview-date"><Ikon n="kalender" s={15} />{tglPanjang(hi.tanggal)}</span><h2>Air mengalir.<br /><em>Usaha terkendali.</em></h2><p>{hi.rit_di_jalan ? `${hi.rit_di_jalan} rit sedang berjalan. Pantau pengantaran dan tindak lanjuti yang perlu diperiksa.` : 'Semua catatan operasional Anda terhubung di sini.'}</p><Link className="btn btn-primary" to="/bos/rit">Pantau rit hari ini<Ikon n="panah" s={18} /></Link></div>
         <div className="overview-finance"><div className="finance-heading"><span><Ikon n="perisai" s={20} />Tagihan kembali</span><small>30 hari</small></div><strong>{rp(d.tagihan_kembali)}</strong><p>Selisih harga yang ditagihkan kembali karena bukti toko belum sesuai.</p><div className="finance-secondary"><span>Perkiraan bocor<strong>{rp(d.perkiraan_bocor)}</strong></span><Link to="/bos/radar" aria-label="Periksa perkiraan bocor di Radar"><Ikon n="panah" s={22} /></Link></div><small>Keduanya berbeda dan tidak dijumlahkan.</small></div>
       </section>
+      <nav className="daily-actions" aria-label="Akses cepat operasional">
+        <Link to="/bos/depot"><span><Ikon n="tambah" s={21} /></span><div><b>Catat penjualan</b><small>Pembeli di depot</small></div><Ikon n="kanan" s={16} /></Link>
+        <Link to="/bos/persetujuan"><span><Ikon n="setuju" s={21} /></span><div><b>Persetujuan</b><small>{d.persetujuan_menunggu} pengajuan menunggu</small></div><Ikon n="kanan" s={16} /></Link>
+        <Link to="/bos/pelanggan"><span><Ikon n="orang" s={21} /></span><div><b>Pelanggan</b><small>Rumah & toko</small></div><Ikon n="kanan" s={16} /></Link>
+        <Link to="/bos/keuangan"><span><Ikon n="uang" s={21} /></span><div><b>Keuangan</b><small>Untung & pengeluaran</small></div><Ikon n="kanan" s={16} /></Link>
+      </nav>
       <Ringkasan items={[
         { label: 'Galon terjual hari ini', nilai: hi.total, ket: `${hi.toko} toko · ${hi.rumah} rumah`, ikon: 'galon' },
         { label: 'Seharusnya disetor', nilai: rp(hi.uang_seharusnya), ket: `Disetor ${rp(hi.uang_disetor)}`, ikon: 'uang' },
         { label: 'Tagihan hari ini', nilai: rp(hi.tagihan_kembali), ket: `Perkiraan bocor ${rp(hi.perkiraan_bocor)}`, ikon: 'perisai' },
         { label: 'Tanda baru', nilai: hi.tanda_baru, ket: `${hi.rit_belum_dicek} muatan belum dicek`, ikon: 'radar', warna: hi.tanda_baru ? 'amber' : '' },
       ]} />
-      <div className="dashboard-workspace">
+      <div className="dashboard-workspace overview-workspace">
         <div className="dashboard-primary">
           <Panel judul="Pola penjualan toko" ket="Porsi toko per kurir selama 30 hari" aksi={<Link to="/bos/radar" className="btn btn-ghost">Buka Radar<Ikon n="panah" s={16} /></Link>}>
             {kosong ? <p className="muted">Grafik muncul setelah kurir mulai mencatat penjualan.</p> : <GrafikPorsi tren={d.tren} kurir={d.kurir} />}
@@ -194,7 +200,7 @@ export default function Dasbor() {
             </Panel>
           )}
           <Panel judul="Rincian perkiraan bocor" ket="30 hari terakhir"><div className="leak-breakdown">{rincian.length ? rincian.map(([k, v]) => <div key={k}><span>{LABEL_KODE[k] || k}</span><b>{rp(v)}</b><i style={{ '--porsi': `${d.perkiraan_bocor ? Math.min(100, v / d.perkiraan_bocor * 100) : 0}%` }} /></div>) : <p className="muted">Belum ada perkiraan kebocoran.</p>}</div></Panel>
-          <div className="quick-links"><span className="eyebrow">AKSES CEPAT</span><Link to="/bos/pelanggan"><Ikon n="orang" />Pelanggan<Ikon n="kanan" s={16} /></Link><Link to="/bos/qr"><Ikon n="qr" />Cetak stiker QR<Ikon n="kanan" s={16} /></Link><Link to="/bos/unduh"><Ikon n="unduh" />Unduh laporan<Ikon n="kanan" s={16} /></Link></div>
+          <div className="quick-links"><span className="eyebrow">AKSES CEPAT</span><Link to="/bos/pelanggan"><Ikon n="orang" />Pelanggan<Ikon n="kanan" s={16} /></Link><Link to="/bos/qr"><Ikon n="qr" />Cetak stiker QR<Ikon n="kanan" s={16} /></Link><Link to="/bos/keuangan"><Ikon n="uang" />Untung & pengeluaran<Ikon n="kanan" s={16} /></Link><Link to="/bos/unduh"><Ikon n="unduh" />Unduh laporan<Ikon n="kanan" s={16} /></Link></div>
         </aside>
       </div>
     </Halaman>

@@ -1,25 +1,31 @@
 # Identitas dan perombakan antarmuka AQUAIR
 
-Diperbarui 15 September 2026 atas arahan pemilik proyek: identitas biru, landing,
-ruang pemilik depot, serta PWA kurir dirombak bersama. Aturan bisnis tetap mengikuti
+Diperbarui 16 September 2026 atas arahan pemilik proyek: ruang pemilik depot dan
+PWA kurir dibuat lebih cerah dengan susunan baru. Landing biru-putih dipertahankan. Aturan bisnis tetap mengikuti
 [spesifikasi produk](03-spesifikasi-produk.md).
 
 ## Arah visual
 
-- Biru utama `#2563EB`, sidebar biru gelap `#0F2342`, latar terang `#F8FAFC`.
+- Biru utama `#2563EB`, sidebar putih, latar `#F4F8FF`, gradasi biru langit,
+  dan kartu putih dengan aksen warna sesuai pekerjaan.
 - Plus Jakarta Sans untuk judul dan Inter untuk isi. Font disimpan di aplikasi,
   beserta lisensi OFL, sehingga tidak perlu mengambil font dari Google saat dibuka.
 - Status tetap dibedakan dengan teks, ikon, serta warna hijau, kuning, dan merah.
 - Landing memakai judul besar, pratinjau produk yang bisa diganti, penjelasan
   verifikasi, contoh hitungan berlabel ilustrasi, alur kerja, PWA, dan tanya jawab.
-- Ruang pemilik memakai sidebar navy, menu kelompok dan pencarian, masthead
-  keuangan, statistik harian, grafik, serta panel tindak lanjut. Direktori dan
-  pengelolaan memakai kartu sesuai jenis pekerjaan. Di HP, gunakan tombol Menu.
+- Ruang pemilik memakai sidebar putih dengan menu aktif bergradasi biru. Menu
+  dikelompokkan menjadi aktivitas harian, pengawasan, pelanggan/tim, dan depot.
+  Bagian menu bergulir sendiri sehingga profil dan tombol keluar tetap tersedia.
+  Dasbor memuat ringkasan keuangan, akses cepat, statistik, grafik, dan tindak lanjut.
+  Di HP, navigasi bawah berisi Dasbor, Rit, Penjualan, Radar, dan Menu lengkap.
+  Menu lengkap berupa panel dengan pencarian dan tombol dua kolom. Panel
+  Perlu perhatian muncul sebelum grafik pada dasbor HP.
 - Kurir memakai kartu muatan biru, dua tujuan penjualan, ringkasan setoran, dan
   penjualan terbaru. Navigasi bawah memisahkan Beranda, Riwayat, dan Setor/Mulai.
   Di laptop tersedia panel penjelasan di kiri.
 - Masuk dan pendaftaran memakai tata letak dua bagian di laptop, satu kolom di HP.
-- Tema gelap mengikuti preferensi perangkat. Landing mempertahankan tema terang.
+- Ruang aplikasi dan halaman masuk menggunakan tema terang yang konsisten,
+  termasuk saat perangkat memilih mode gelap. Landing mempertahankan tampilannya.
 - Animasi menghormati preferensi pengurangan gerak. Menu modal mendukung Escape,
   perpindahan fokus dengan keyboard, dan penguncian gulir halaman belakang.
 
@@ -57,7 +63,7 @@ Perombakan mencakup komposisi halaman dan alur kerja berikut.
 | Area | Susunan dan interaksi baru |
 | --- | --- |
 | Landing | Judul terpusat, panggung pratinjau lebar, pilihan ruang pemilik/kurir, penjelasan verifikasi, alur pengantaran, FAQ, dan pendaftaran. |
-| Dasbor pemilik | Sidebar navy, ringkasan keuangan, statistik harian, grafik berdampingan dengan daftar tindak lanjut, rincian kebocoran, dan perbandingan kurir. |
+| Dasbor pemilik | Sidebar putih, ringkasan keuangan berlatar biru langit, akses cepat operasional, statistik harian, grafik dan tindak lanjut. Di HP, ringkasan lebih ringkas dan tindak lanjut didahulukan. |
 | Pelanggan | Pencarian nama, filter jenis, pilihan kartu/tabel, ringkasan lokasi, dan izin bon langsung dari kartu. |
 | Kurir | Kartu anggota tim, pencarian, status rit, pengaturan akses, serta PIN. |
 | Radar dan Persetujuan | Filter status pemeriksaan/jenis pengajuan, panel keputusan, dan riwayat keputusan. |
@@ -77,6 +83,10 @@ Perombakan mencakup komposisi halaman dan alur kerja berikut.
 - `frontend/src/tampilan.css`: fondasi identitas, landing, auth, dan komponen umum.
 - `frontend/src/pengalaman.css`: komposisi baru semua ruang kerja dan penyesuaian
   layar laptop, tablet, HP, cetak, serta mode gelap.
+- `frontend/src/cerah.css`: sumber visual akhir ruang aplikasi, dimuat setelah
+  fondasi lama. Mencakup palet terang, navigasi pemilik, dasbor, halaman pengelolaan,
+  formulir kurir, masuk/daftar, area aman PWA, dan cetak. Selector dibatasi ke
+  ruang aplikasi sehingga komposisi dan ilustrasi landing tetap sama.
 - `frontend/src/komponen/Ruang.js`: ringkasan, pencarian, pilihan filter, panel,
   keadaan kosong, dan bagian formulir bersama.
 - `frontend/src/kurir/Riwayat.js`: riwayat lengkap dan komponen daftar penjualan
@@ -86,12 +96,37 @@ Perombakan mencakup komposisi halaman dan alur kerja berikut.
 - `frontend/src/komponen/AuthLayout.js`: tata letak masuk dan pendaftaran bersama.
 - `frontend/src/fonts.css` dan `assets/fonts/`: font lokal dan lisensi.
 - `frontend/public/manifest.json` dan `sw.js`: identitas PWA, cache logo, serta
-  pembaruan cache ke `aquair-v4`. Respons API tetap tidak disimpan di cache.
+  pembaruan cache ke `aquair-v5`. Respons API tetap tidak disimpan di cache.
 - `frontend/.env.production`: konfigurasi publik `GENERATE_SOURCEMAP=false` untuk
   menghindari source map TypeScript yang tidak disertakan paket `html5-qrcode`.
   Pemeriksaan ESLint dan build CI tetap aktif. Berkas ini tidak berisi rahasia.
 
 ## Validasi
+
+### Perombakan cerah — 16 September 2026
+
+- Build produksi ketat `CI=true npx react-scripts build` lulus.
+- Seluruh 52 tes backend lulus dengan MongoDB lokal. Perombakan ini tidak
+  mengubah endpoint, perhitungan harga, verifikasi, maupun format antrean.
+- Pemeriksaan browser mencakup 17 halaman pemilik pada 320, 390, 768, 1024,
+  dan 1440 px, serta enam halaman kurir pada 320, 390, 768, dan 1440 px.
+  Tidak ditemukan pelebaran halaman atau galat JavaScript pada 109 tata letak ini.
+  Sesudah penyesuaian terakhir, 44 tata letak HP/formulir/halaman publik diperiksa ulang.
+- Audit otomatis WCAG A/AA pada 23 halaman/keadaan, termasuk menu terbuka,
+  formulir multi-produk, bukti penjualan, dan preferensi perangkat gelap,
+  selesai tanpa temuan. Kontras indikator muatan diperbaiki. Tabel keuangan
+  diberi fokus keyboard dan nama agar dapat digulir lewat keyboard.
+- Alur demo yang berhasil: menu HP dan pencariannya, Escape/pengembalian fokus,
+  penjualan toko terverifikasi dengan beberapa produk, penjualan rumah,
+  QR jauh dan persetujuan harga toko, antrean tanpa sinyal dan pengiriman ulang,
+  setoran, rit baru, penjualan depot, catatan pengeluaran, dan pilihan periode.
+- Unduhan CSV berhasil; cetak stiker tetap tiga kolom tanpa navigasi bawah.
+  Service worker memakai `aquair-v5`, dan landing dapat dibuka ulang tanpa jaringan.
+- Tombol simpan pengaturan tetap berada di atas navigasi bawah pada viewport
+  pendek 390 × 430 px. Kamera/GPS dan pemasangan pada HP fisik tidak disimulasikan
+  sebagai hasil uji perangkat nyata.
+
+### Pengujian antarmuka sebelumnya — 15 September 2026
 
 - Build produksi: `cd frontend && CI=true npx react-scripts build`.
 - Backend: 33 tes lulus menggunakan MongoDB lokal dan database uji terpisah,

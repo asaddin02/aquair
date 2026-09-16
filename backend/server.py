@@ -10,7 +10,7 @@ load_dotenv(Path(__file__).parent / ".env")
 from fastapi import APIRouter, FastAPI  # noqa: E402
 from starlette.middleware.cors import CORSMiddleware  # noqa: E402
 
-from aquair import api_bos, api_bos_tambahan, api_kurir, api_produk, api_publik  # noqa: E402
+from aquair import api_bos, api_bos_tambahan, api_keuangan, api_kurir, api_produk, api_publik  # noqa: E402
 from aquair.inti import siapkan_indeks  # noqa: E402
 
 
@@ -29,7 +29,7 @@ async def sehat():
     return {"status": "ok", "aplikasi": "AQUAIR"}
 
 
-for modul in (api_publik, api_kurir, api_bos, api_bos_tambahan, api_produk):
+for modul in (api_publik, api_kurir, api_bos, api_bos_tambahan, api_produk, api_keuangan):
     api.include_router(modul.router)
 app.include_router(api)
 

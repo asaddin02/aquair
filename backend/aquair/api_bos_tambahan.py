@@ -39,11 +39,12 @@ def waktu_csv(dt) -> str:
     return dt.astimezone(WIB).strftime("%Y-%m-%d %H:%M") if dt else ""
 
 
-NAMA_JENIS = {"penjualan": "penjualan", "rit": "rit-setoran", "tanda": "tanda-radar", "audit": "log-audit", "depot": "penjualan-depot"}
+NAMA_JENIS = {"penjualan": "penjualan", "rit": "rit-setoran", "tanda": "tanda-radar", "audit": "log-audit",
+              "depot": "penjualan-depot", "pengeluaran": "pengeluaran"}
 
 
 @router.get("/unduh")
-async def unduh_csv(jenis: Literal["penjualan", "rit", "tanda", "audit", "depot"] = "penjualan", dari: str | None = None,
+async def unduh_csv(jenis: Literal["penjualan", "rit", "tanda", "audit", "depot", "pengeluaran"] = "penjualan", dari: str | None = None,
                     sampai: str | None = None, s: dict = Depends(sesi_bos)):
     depot, d = s["depot"], db()
     sampai = sampai or tanggal_wib()
@@ -84,6 +85,11 @@ async def unduh_csv(jenis: Literal["penjualan", "rit", "tanda", "audit", "depot"
         for f in await d.flags.find(rentang).sort([("tanggal", 1), ("kode", 1)]).to_list(None):
             baris.append([f["tanggal"], sel_teks(nk(f["kurir_id"])), f["kode"], sel_teks(f["penjelasan"]), sel_angka(f["perkiraan_rupiah"]),
                           f["masuk_ke"] or "", f["status"]])
+    elif jenis == "pengeluaran":
+        kepala = ["tanggal", "kategori", "keterangan", "jumlah", "dicatat_oleh"]
+        for x in await d.expenses.find(rentang).sort([("tanggal", 1), ("created_at", 1)]).to_list(None):
+            baris.append([x["tanggal"], sel_teks(x.get("nama_kategori", x["kategori"])), sel_teks(x["keterangan"]),
+                          sel_angka(x["jumlah"]), sel_teks(x["nama_pengguna"])])
     elif jenis == "depot":
         kepala = ["waktu", "produk", "jumlah", "satuan", "harga", "total", "dicatat_oleh", "batal", "alasan_batal"]
         for x in await d.depot_sales.find(rentang).sort("created_at", 1).to_list(None):

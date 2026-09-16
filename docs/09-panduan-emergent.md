@@ -13,14 +13,15 @@ aturan tampilan, aturan PWA, dan batas yang tidak boleh dilanggar. Aturan bisnis
 | Endpoint publik: daftar, masuk, depot demo, konfirmasi toko | `backend/aquair/api_publik.py` |
 | Endpoint kurir | `backend/aquair/api_kurir.py` |
 | Endpoint bos | `backend/aquair/api_bos.py`, `backend/aquair/api_bos_tambahan.py` (CSV, galon, konfirmasi, perawatan, kepatuhan, Ringkasan AI), `backend/aquair/api_produk.py` (produk & harga, penjualan di depot) |
+| Buku kas: untung, uang masuk, dan pengeluaran | `backend/aquair/api_keuangan.py` |
 | Katalog produk (isi ulang galon = produk utama `utama`) | `backend/aquair/produk.py` |
 | Hitung ulang Radar dan data dasbor | `backend/aquair/layanan.py` |
 | Pembuat depot demo | `backend/aquair/demo.py` |
 | Sesi, token, dan database | `backend/aquair/keamanan.py`, `backend/aquair/inti.py` |
-| Tes | `backend/tests/test_aturan.py` (contoh hitungan spesifikasi 4.4 dan aturan per produk), `backend/tests/test_api.py`, `backend/tests/test_produk.py` |
+| Tes | `backend/tests/test_aturan.py` (contoh hitungan spesifikasi 4.4 dan aturan per produk), `backend/tests/test_api.py`, `backend/tests/test_produk.py`, `backend/tests/test_keuangan.py` |
 | Rute frontend | `frontend/src/App.js` |
 | Halaman publik | `frontend/src/halaman/` |
-| Ruang bos (menu di array `MENU`) | `frontend/src/bos/` (`BosApp.js`; produk di `Produk.js`, penjualan di depot di `PenjualanDepot.js`) |
+| Ruang bos (menu di array `MENU`) | `frontend/src/bos/` (`BosApp.js`; produk di `Produk.js`, penjualan di depot di `PenjualanDepot.js`, buku kas di `Keuangan.js`) |
 | Aplikasi kurir | `frontend/src/kurir/` (`KurirApp.js`) |
 | Komponen bersama | `frontend/src/komponen/` |
 | Pemanggil API dan format angka | `frontend/src/api.js`, `frontend/src/format.js` |

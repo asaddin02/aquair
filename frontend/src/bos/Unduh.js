@@ -6,7 +6,7 @@ import { KotakGalat, Memuat, useData, useToast } from '../komponen/umum';
 import { Catatan } from '../komponen/Ruang';
 import { Halaman } from './umumBos';
 
-const JENIS = [['penjualan', 'Penjualan'], ['rit', 'Rit & setoran'], ['tanda', 'Tanda Radar'], ['audit', 'Log audit'], ['depot', 'Penjualan di depot']];
+const JENIS = [['penjualan', 'Penjualan'], ['rit', 'Rit & setoran'], ['tanda', 'Tanda Radar'], ['audit', 'Log audit'], ['depot', 'Penjualan di depot'], ['pengeluaran', 'Pengeluaran']];
 
 export default function Unduh() {
   const toast = useToast();
@@ -47,7 +47,7 @@ export default function Unduh() {
       <div className="export-workspace"><div className="export-main"><div className="export-heading"><span className="entity-icon"><Ikon n="unduh" s={26} /></span><h2>Siapkan laporan depot</h2><p>Pilih data dan periode, lalu unduh untuk dibuka di Excel atau Google Sheets.</p></div>
       <section className="card stack" style={{ '--gap': '14px' }}>
         <div className="field"><span>Jenis data</span>
-          <div className="export-types" role="group" aria-label="Jenis data">{JENIS.map(([v, l], i) => <button key={v} aria-pressed={jenis === v} onClick={() => setJenis(v)}><Ikon n={['galon', 'rit', 'radar', 'setuju', 'toko'][i]} s={23} /><b>{l}</b><span>{['Rincian setiap transaksi kurir', 'Muatan dan penerimaan uang', 'Temuan pemeriksaan depot', 'Riwayat perubahan data', 'Pembeli yang datang ke depot'][i]}</span><i><Ikon n="cek" s={15} /></i></button>)}</div></div>
+          <div className="export-types" role="group" aria-label="Jenis data">{JENIS.map(([v, l], i) => <button key={v} aria-pressed={jenis === v} onClick={() => setJenis(v)}><Ikon n={['galon', 'rit', 'radar', 'setuju', 'toko', 'uang'][i]} s={23} /><b>{l}</b><span>{['Rincian setiap transaksi kurir', 'Muatan dan penerimaan uang', 'Temuan pemeriksaan depot', 'Riwayat perubahan data', 'Pembeli yang datang ke depot', 'Uang keluar depot per catatan'][i]}</span><i><Ikon n="cek" s={15} /></i></button>)}</div></div>
         <div className="form-grid" style={{ maxWidth: 460 }}>
           <label className="field" htmlFor="unduh-dari"><span>Dari</span><input id="unduh-dari" type="date" className="input" value={dari} max={sampai} onChange={(e) => setDari(e.target.value)} /></label>
           <label className="field" htmlFor="unduh-sampai"><span>Sampai</span><input id="unduh-sampai" type="date" className="input" value={sampai} min={dari} max={hariIni} onChange={(e) => setSampai(e.target.value)} /></label>

@@ -39,7 +39,7 @@ export default function Beranda() {
     <>
       <div className="k-top courier-greeting">
         <div className="grow"><span className="eyebrow">SELAMAT BERTUGAS</span><h2>Halo, {kurir.nama}<span className="greeting-dot">.</span></h2><p className="small muted">{depot.nama}{rit ? ` · berangkat ${jam(rit.berangkat_at)}` : ''}</p></div>
-        {!sesi.demo && <button className="btn btn-ghost" onClick={keluar} aria-label="Keluar"><Ikon n="keluar" s={20} />Keluar</button>}
+        {sesi.demo ? <span className="courier-avatar" aria-hidden="true"><Ikon n="rit" s={25} /></span> : <button className="btn btn-ghost" onClick={keluar} aria-label="Keluar"><Ikon n="keluar" s={20} />Keluar</button>}
       </div>
       <div className="k-body">
         {antrean.antrean.length > 0 && (

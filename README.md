@@ -64,5 +64,6 @@ mendapat depot contoh sendiri. Petunjuk lengkap ada di [panduan mencoba](docs/07
 - [ ] Ditarik Emergent: tes, Ringkasan AI, lalu deploy sekali
 - [ ] Submit ke lomba
 - [x] Fitur multi-produk (LPG, galon bermerek, galon baru, isi wadah kecil), penjualan di depot, dan tambalan 2 celah anti-curang (R9 galon kosong, rit kemarin wajib ditutup) dibangun dan lulus 45 tes
+- [x] Buku kas sederhana: untung per hari/7 hari/bulan/rentang pilihan sendiri, pencatatan pengeluaran, ekspor CSV, dan untung kotor per produk dari harga beli (52 tes)
 - [ ] Catatan kurir 7 hari terakhir terkumpul
 - [ ] Uji coba di depot keluarga (angka nyata untuk penilaian dampak bisnis)

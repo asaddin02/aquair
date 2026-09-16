@@ -23,6 +23,7 @@ class DataProduk(BaseModel):
     satuan: str = Field(min_length=1, max_length=15)
     harga_rumah: int = Field(ge=0, le=10_000_000)
     harga_toko: int | None = Field(None, ge=0, le=10_000_000)
+    harga_beli: int | None = Field(None, ge=0, le=10_000_000)
     dijual_kurir: bool = True
     dijual_depot: bool = False
     pakai_kosong: bool = False
@@ -33,6 +34,8 @@ async def periksa_produk(depot_id: str, b: DataProduk, kecuali: str | None = Non
     data = {**b.model_dump(), "nama": b.nama.strip(), "satuan": b.satuan.strip()}
     if data["harga_toko"] is not None and data["harga_toko"] >= data["harga_rumah"]:
         galat(400, "Harga toko harus lebih murah dari harga rumah. Kosongkan kalau produk ini hanya punya satu harga.")
+    if data["harga_beli"] is not None and data["harga_beli"] >= data["harga_rumah"]:
+        galat(400, "Harga beli harus lebih murah dari harga jual. Kosongkan kalau produk ini hasil produksi depot sendiri.")
     if not (data["dijual_kurir"] or data["dijual_depot"]):
         galat(400, "Pilih minimal satu cara jual: lewat kurir atau di depot.")
     if data["nama"].lower() == "isi ulang galon":
@@ -113,7 +116,8 @@ async def catat_penjualan_depot(b: JualDepot, s: dict = Depends(sesi_bos)):
     if not p:
         galat(400, "Produk tidak ditemukan atau tidak dijual di depot.")
     x = {"_id": id_baru(), "depot_id": depot["_id"], "produk_id": p["_id"], "nama_produk": p["nama"], "satuan": p["satuan"],
-         "jumlah": b.jumlah, "harga": p["harga_rumah"], "total": b.jumlah * p["harga_rumah"], "bayar": "tunai", "batal": False,
+         "jumlah": b.jumlah, "harga": p["harga_rumah"], "harga_beli": p.get("harga_beli"), "total": b.jumlah * p["harga_rumah"],
+         "bayar": "tunai", "batal": False,
          "dicatat_oleh": s["user"]["_id"], "nama_pengguna": s["user"]["nama"], "created_at": kini, "tanggal": tanggal_wib(kini),
          **penanda_demo(depot)}
     await db().depot_sales.insert_one(x)
